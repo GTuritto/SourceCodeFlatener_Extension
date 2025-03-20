@@ -160,6 +160,36 @@ The extension supports a wide range of file types including:
 
 Binary files and media files are automatically excluded from processing.
 
+## For Developers
+
+### Versioning System
+
+This project uses a centralized versioning system to maintain consistent version numbers across all files:
+
+- The current version is stored in the `VERSION` file at the root of the project
+- An automated script (`update_version.sh`) helps update version numbers across all files
+
+To update the version number:
+
+```bash
+./update_version.sh NEW_VERSION
+# Example: ./update_version.sh 1.2.0
+```
+
+The script will automatically update:
+
+- VERSION file
+- package.json
+- README.md
+- DOWNLOAD.md
+- CHANGELOG.md (adds a new version section)
+
+After running the script, you should:
+
+1. Edit the CHANGELOG.md to document your changes
+2. Run `npx vsce package` to build the new package
+3. Create a new Git tag with `git tag -a vX.Y.Z -m "Version X.Y.Z"`
+
 ## Credits
 
 Based on the shell script from [GTuritto/SourceCodeFlatener](https://github.com/GTuritto/SourceCodeFlatener).
