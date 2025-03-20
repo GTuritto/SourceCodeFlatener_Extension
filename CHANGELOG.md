@@ -2,6 +2,15 @@
 
 All notable changes to the "Source Code Flattener" extension will be documented in this file.
 
+## [1.0.1] - 2025-03-20
+
+### Improvements
+
+- Enhanced installation documentation and direct download options
+- Added one-click installation from GitHub repository
+- Included compiled VSIX file for easier installation
+- Improved repository discoverability with better metadata
+
 ## [1.0.0] - 2025-03-20
 
 ### Initial Release
