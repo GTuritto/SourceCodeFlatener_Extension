@@ -371,6 +371,202 @@ Project Directory: ${workspacePath}
         return allowedExts.includes(ext) || ext === '';
     }
     /**
+     * Detect dependencies in code files based on import statements
+     * @param content File content to analyze
+     * @param filePath Path to the file being analyzed
+     * @returns Array of detected dependencies
+     */
+    detectDependencies(content, filePath) {
+        const dependencies = [];
+        const ext = path.extname(filePath).toLowerCase();
+        const fileName = path.basename(filePath);
+        // Handle different file types differently
+        if (['.js', '.jsx', '.ts', '.tsx'].includes(ext)) {
+            // JavaScript/TypeScript imports
+            const importRegexes = [
+                /import\s+.*?from\s+['"]([^'"]+)['"];?/g, // ES6 imports
+                /import\s*\(['"]([^'"]+)['"]\);?/g, // Dynamic imports
+                /require\s*\(['"]([^'"]+)['"]\);?/g, // CommonJS require
+                /import\s+['"]([^'"]+)['"];?/g // Side-effect imports
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.py'].includes(ext)) {
+            // Python imports
+            const importRegexes = [
+                /import\s+([\w\d_.]+)/g, // import x
+                /from\s+([\w\d_.]+)\s+import/g // from x import y
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.java'].includes(ext)) {
+            // Java imports
+            const importRegex = /import\s+([\w\d_.]+)(?:\.[*])?;/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (['.cs'].includes(ext)) {
+            // C# imports
+            const importRegex = /using\s+([\w\d_.]+);/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (['.cpp', '.hpp', '.c', '.h'].includes(ext)) {
+            // C/C++ includes
+            const importRegex = /#include\s+[<"]([^>"]+)[>"]|#include\s+['"]([^'"]+)['"];?/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                const dep = match[1] || match[2];
+                if (dep && !dependencies.includes(dep)) {
+                    dependencies.push(dep);
+                }
+            }
+        }
+        else if (['.go'].includes(ext)) {
+            // Go imports
+            const importRegex = /import\s+\(([\s\S]*?)\)/g;
+            const singleImportRegex = /import\s+[^\(].*?['"]([^'"]+)['"];?/g;
+            // Extract multi-line imports
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                const importBlock = match[1];
+                const packageRegex = /['"]([^'"]+)['"];?/g;
+                let packageMatch;
+                while ((packageMatch = packageRegex.exec(importBlock)) !== null) {
+                    if (packageMatch[1] && !dependencies.includes(packageMatch[1])) {
+                        dependencies.push(packageMatch[1]);
+                    }
+                }
+            }
+            // Extract single-line imports
+            let singleMatch;
+            while ((singleMatch = singleImportRegex.exec(content)) !== null) {
+                if (singleMatch[1] && !dependencies.includes(singleMatch[1])) {
+                    dependencies.push(singleMatch[1]);
+                }
+            }
+        }
+        else if (['.php'].includes(ext)) {
+            // PHP includes
+            const importRegexes = [
+                /require(_once)?\s+['"]([^'"]+)['"];?/g,
+                /include(_once)?\s+['"]([^'"]+)['"];?/g,
+                /use\s+([\w\\]+)(?:\\[\w]+)?;/g
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    const dep = match[2] || match[1]; // require/include have the path in group 2, use statements in group 1
+                    if (dep && !dependencies.includes(dep)) {
+                        dependencies.push(dep);
+                    }
+                }
+            }
+        }
+        else if (['.rb'].includes(ext)) {
+            // Ruby requires
+            const importRegexes = [
+                /require\s+['"]([^'"]+)['"];?/g,
+                /require_relative\s+['"]([^'"]+)['"];?/g,
+                /load\s+['"]([^'"]+)['"];?/g
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.rs'].includes(ext)) {
+            // Rust imports
+            const importRegexes = [
+                /use\s+([\w:]+)(?:::[{][\w\s:,]*[}]|::[\w]+)?;/g,
+                /extern\s+crate\s+([\w]+);/g
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.html', '.htm'].includes(ext)) {
+            // HTML dependencies (scripts, stylesheets, etc.)
+            const importRegexes = [
+                /<script\s+.*?src=['"]([^'"]+)['"].*?>(?:<\/script>)?/g,
+                /<link\s+.*?href=['"]([^'"]+)['"].*?rel=['"]stylesheet['"].*?>/g,
+                /<link\s+.*?rel=['"]stylesheet['"].*?href=['"]([^'"]+)['"].*?>/g,
+                /<img\s+.*?src=['"]([^'"]+)['"].*?>/g
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.scss', '.less', '.css'].includes(ext)) {
+            // CSS imports
+            const importRegexes = [
+                /@import\s+['"]([^'"]+)['"];?/g,
+                /@use\s+['"]([^'"]+)['"];?/g,
+                /url\(['"]?([^'"\)]+)['"]?\)/g
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        return dependencies;
+    }
+    /**
+     * Format detected dependencies as markdown
+     * @param dependencies Array of detected dependencies
+     * @returns Formatted markdown string
+     */
+    formatDependencies(dependencies) {
+        if (dependencies.length === 0) {
+            return "";
+        }
+        let result = "### Dependencies\n\n";
+        for (const dep of dependencies) {
+            result += `- \`${dep}\`\n`;
+        }
+        return result + "\n";
+    }
+    /**
      * Process the contents of a file
      * @param filepath Path to the file to process
      * @param projectDir Base project directory path
@@ -387,13 +583,19 @@ Project Directory: ${workspacePath}
             try {
                 // Read file with error handling
                 const content = await readFile(filepath, 'utf8');
+                // Detect dependencies in the file
+                const dependencies = this.detectDependencies(content, filepath);
+                // Add dependency information if any were found
+                if (dependencies.length > 0) {
+                    output += this.formatDependencies(dependencies);
+                }
                 // Process content based on file type
                 if (filepath.endsWith('.md')) {
                     // Strip markdown formatting
                     output += this.stripMarkdown(content);
                 }
                 else {
-                    output += content;
+                    output += "```" + path.extname(filepath).substring(1) + "\n" + content + "\n```\n";
                 }
                 // Write in a single operation rather than line by line
                 await this.writeBlockToOutput(output, maxOutputFileSizeBytes);

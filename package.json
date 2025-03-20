@@ -1,7 +1,7 @@
 {
   "name": "source-code-flattener",
   "displayName": "Source Code Flattener",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Flatten source code files into markdown for easy access by AI assistants and LLMs",
   "publisher": "GTuritto",
   "engines": {

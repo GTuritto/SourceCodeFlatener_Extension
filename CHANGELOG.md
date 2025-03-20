@@ -2,7 +2,12 @@
 
 All notable changes to the "Source Code Flattener" extension will be documented in this file.
 
-## [1.0.1] - 2025-03-20
+## [1.0.2] - 2025-03-20
+
+### New Features
+
+- Added automatic dependency detection and documentation for code files
+- Support for detecting imports in multiple programming languages including JavaScript, TypeScript, Python, Java, C#, C/C++, Go, PHP, Ruby, Rust, HTML, and CSS
 
 ### Improvements
 
@@ -10,6 +15,7 @@ All notable changes to the "Source Code Flattener" extension will be documented 
 - Added one-click installation from GitHub repository
 - Included compiled VSIX file for easier installation
 - Improved repository discoverability with better metadata
+- Code formatting improvements with syntax highlighting in output
 
 ## [1.0.0] - 2025-03-20
 

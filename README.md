@@ -1,10 +1,10 @@
 # Source Code Flattener VSCode Extension
 
-[![Version](https://img.shields.io/badge/version-1.0.1-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![Version](https://img.shields.io/badge/version-1.0.2-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GTuritto.source-code-flattener)
 
-> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.1.vsix)**
+> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.2.vsix)**
 >
 > One-click download and install! See [installation instructions](#direct-download-easiest-method).
 
@@ -13,6 +13,7 @@ This extension flattens source code files in a project into a single or multiple
 ## Features
 
 - Flattens source code from your workspace into a single markdown file (or multiple if size exceeds limits)
+- **NEW: Automatically detects and documents code dependencies and imports**
 - Automatically creates a `CodeFlattened` folder (configurable) in your project root
 - Provides a directory structure overview and comprehensive file listing
 - Includes full source code content of each file with proper formatting
@@ -28,7 +29,7 @@ This extension flattens source code files in a project into a single or multiple
 
 ### Direct Download (Easiest Method)
 
-1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.0.1.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.1.vsix)
+1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.0.2.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.2.vsix)
 
 2. Install it in VS Code:
    - Open VS Code
@@ -40,7 +41,7 @@ This extension flattens source code files in a project into a single or multiple
 Or use this command after downloading:
 
 ```bash
-code --install-extension source-code-flattener-1.0.1.vsix
+code --install-extension source-code-flattener-1.0.2.vsix
 ```
 
 ### Quick Install from GitHub
@@ -106,9 +107,34 @@ The extension scans your project directory, ignoring paths that match exclude pa
 
 1. A summary section with file counts, size information, and processing time
 2. A directory structure visualization with folders and files
-3. The complete content of each source file with proper formatting
+3. For each file, a list of its dependencies (imports, includes, etc.)
+4. The complete content of each source file with proper formatting
 
 Large output files are automatically split into multiple parts to avoid token limits when used with AI tools.
+
+## Dependency Documentation
+
+The extension automatically detects and documents dependencies between files. For each file, it:
+
+1. Analyzes the file content to identify import statements, require calls, or includes
+2. Adds a "Dependencies" section at the beginning of each file's documentation
+3. Lists all detected dependencies with their paths or module names
+
+Supported languages and import types:
+
+- **JavaScript/TypeScript**: ES6 imports, CommonJS requires, dynamic imports
+- **Python**: import statements and from-import statements
+- **Java**: package imports
+- **C#**: using directives
+- **C/C++**: #include statements
+- **Go**: import statements (both single and block imports)
+- **PHP**: require/include statements and use declarations
+- **Ruby**: require and load statements
+- **Rust**: use and extern crate statements
+- **HTML**: script, link, and img references
+- **CSS/SCSS/LESS**: @import and url() references
+
+This feature makes it easier for AI models to understand the relationships between files in your codebase, improving context-aware code generation and understanding.
 
 ## Performance Optimizations
 

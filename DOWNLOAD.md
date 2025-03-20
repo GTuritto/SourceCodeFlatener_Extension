@@ -2,7 +2,7 @@
 
 ## Quick Download
 
-**[⬇️ Download the latest version (v1.0.1)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.1.vsix)**
+**[⬇️ Download the latest version (v1.0.2)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.2.vsix)**
 
 ## How to Install
 
@@ -19,12 +19,14 @@ After downloading the VSIX file:
 ### Method 2: Using Command Line
 
 ```bash
-code --install-extension source-code-flattener-1.0.1.vsix
+code --install-extension source-code-flattener-1.0.2.vsix
 ```
 
-## What's Included in v1.0.1
+## What's Included in v1.0.2
 
 - Flatten source code from workspace into markdown files
+- **NEW: Automatic dependency detection between files**
+- **NEW: Code syntax highlighting in output**
 - Create a dedicated output folder (default: `CodeFlattened`)
 - Process various file types and formats
 - Detailed progress indicators and summary information
