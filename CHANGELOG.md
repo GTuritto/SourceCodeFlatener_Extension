@@ -2,7 +2,7 @@
 
 All notable changes to the "Source Code Flattener" extension will be documented in this file.
 
-## [1.0.2] - 2025-03-20
+## [1.1.0] - 2025-03-20
 
 ### New Features
 
