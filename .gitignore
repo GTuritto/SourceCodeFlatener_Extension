@@ -6,7 +6,7 @@ yarn.lock
 package-lock.json
 
 # Build output
-out/
+# out/ - keeping compiled files for easy installation from GitHub
 dist/
 lib/
 *.vsix

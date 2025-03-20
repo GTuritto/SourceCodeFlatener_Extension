@@ -16,6 +16,43 @@ This extension flattens source code files in a project into a single or multiple
 - Parallel file processing for improved performance on large codebases
 - Robust error handling to continue processing despite individual file failures
 
+## Installation
+
+### From VS Code Marketplace
+
+1. Open VS Code
+2. Go to Extensions (Ctrl+Shift+X or Cmd+Shift+X on macOS)
+3. Search for "Source Code Flattener"
+4. Click Install
+
+### From GitHub
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git
+   ```
+
+2. Install the dependencies:
+
+   ```bash
+   cd SourceCodeFlatener_Extension
+   npm install
+   ```
+
+3. Install the extension locally:
+
+   ```bash
+   code --install-extension source-code-flattener-1.0.0.vsix
+   ```
+
+   Or, if you don't have the VSIX file:
+
+   ```bash
+   npm run compile
+   code --install-extension .
+   ```
+
 ## Usage
 
 1. Open your project folder in VSCode

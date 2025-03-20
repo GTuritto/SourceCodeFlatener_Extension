@@ -21,3 +21,9 @@ node_modules/**
 !node_modules/minimatch/**
 !node_modules/once/**
 !node_modules/wrappy/**
+
+# Test files
+test_project/**
+test_flattener.js
+images/create_icon.js
+images/icon.svg
