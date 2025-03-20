@@ -4,11 +4,16 @@ import * as path from 'path';
 import * as glob from 'glob';
 import { promisify } from 'util';
 
+// Promisified filesystem functions for cleaner async code
 const writeFile = promisify(fs.writeFile);
 const readFile = promisify(fs.readFile);
 const mkdir = promisify(fs.mkdir);
 const stat = promisify(fs.stat);
 const globPromise = promisify(glob.glob);
+
+// File size constants (in bytes)
+const KB = 1024;
+const MB = 1024 * KB;
 
 export class CodeFlattener {
     private filePart = 1;
@@ -20,6 +25,13 @@ export class CodeFlattener {
 
     /**
      * Flatten the entire workspace
+     * @param workspacePath Path to the workspace/folder to flatten
+     * @param outputFolderPath Path where flattened output should be saved
+     * @param includePatterns Array of glob patterns to include
+     * @param excludePatterns Array of glob patterns to exclude
+     * @param maxFileSizeBytes Maximum size of files to process
+     * @param maxOutputFileSizeBytes Maximum size for output files before splitting
+     * @param progressCallback Callback function to report progress
      */
     async flattenWorkspace(
         workspacePath: string,
@@ -31,6 +43,14 @@ export class CodeFlattener {
         progressCallback: (message: string, increment: number) => void
     ): Promise<void> {
         try {
+            // Validate input parameters
+            if (!workspacePath) throw new Error('Workspace path is required');
+            if (!outputFolderPath) throw new Error('Output folder path is required');
+            if (maxFileSizeBytes <= 0) throw new Error('Max file size must be positive');
+            if (maxOutputFileSizeBytes <= 0) throw new Error('Max output file size must be positive');
+            
+            progressCallback(`Starting flattening process...`, 0.01);
+            
             // Make sure the output directory exists
             await this.ensureDirectory(outputFolderPath);
 
@@ -45,82 +65,141 @@ export class CodeFlattener {
             this.filePart = 1;
 
             // Initialize output file with header
-            const header = `# Project Digest: ${this.projectName}\nGenerated on: ${new Date().toString()}\nSource: ${workspacePath}\nProject Directory: ${workspacePath}\n\n`;
+            const startTime = new Date();
+            const header = `# Project Digest: ${this.projectName}
+Generated on: ${startTime.toString()}
+Source: ${workspacePath}
+Project Directory: ${workspacePath}
+
+`;
             await writeFile(this.currentOutputFile, header);
 
+            progressCallback(`Scanning directory structure...`, 0.05);
+            
             // Process directory structure
             await this.writeLineToOutput("# Directory Structure", maxOutputFileSizeBytes);
             await this.processDirectory(workspacePath, "", workspacePath, includePatterns, excludePatterns, maxOutputFileSizeBytes);
 
+            progressCallback(`Scanning for files to process...`, 0.1);
+            
             // Process file contents
             await this.writeLineToOutput("\n# Files Content", maxOutputFileSizeBytes);
 
-            // Get all files in the workspace
+            // Get all files in the workspace - use more efficient approach
             let files: string[] = [];
             
-            if (includePatterns.length > 0) {
-                // If include patterns are specified, use them
-                for (const pattern of includePatterns) {
-                    const matches = await globPromise(pattern, { cwd: workspacePath, absolute: true, nodir: true });
-                    files = [...files, ...matches];
+            try {
+                if (includePatterns.length > 0) {
+                    // Process include patterns in parallel
+                    const matchPromises = includePatterns.map(pattern => 
+                        globPromise(pattern, { 
+                            cwd: workspacePath, 
+                            absolute: true, 
+                            nodir: true,
+                            ignore: excludePatterns,  // Use built-in exclude pattern support
+                            silent: true              // Skip permission errors
+                        })
+                    );
+                    
+                    const matchResults = await Promise.all(matchPromises);
+                    files = Array.from(new Set(matchResults.flat())); // Remove duplicates
+                } else {
+                    // Otherwise, get all files (except excluded ones)
+                    files = await this.getAllFiles(workspacePath);
+                    progressCallback(`Found ${files.length} files in workspace`, 0.15);
                 }
-            } else {
-                // Otherwise, get all files
-                files = await this.getAllFiles(workspacePath);
-            }
 
-            // Filter files based on exclude patterns
-            files = files.filter(file => {
-                const relativePath = path.relative(workspacePath, file);
-                return !this.shouldIgnore(relativePath, includePatterns, excludePatterns);
-            });
+                // Filter files based on exclude patterns (as a backup, glob's ignore might miss some)
+                files = files.filter(file => {
+                    const relativePath = path.relative(workspacePath, file);
+                    return !this.shouldIgnore(relativePath, includePatterns, excludePatterns);
+                });
+                
+                progressCallback(`Filtered to ${files.length} relevant files`, 0.2);
+            } catch (scanErr) {
+                console.error('Error scanning for files:', scanErr);
+                progressCallback(`Error scanning for files: ${(scanErr as Error).message}`, 0.2);
+                // Continue with any files we might have found
+            }
 
             // Process each file
             let fileCount = 0;
             let totalBytes = 0;
             let processedCount = 0;
-
-            for (const file of files) {
-                try {
-                    const relativePath = path.relative(workspacePath, file);
-                    const fileStats = await stat(file);
-                    
-                    // Skip files that are too large
-                    if (fileStats.size > maxFileSizeBytes) {
-                        progressCallback(`Skipping large file: ${relativePath}`, 0);
-                        continue;
-                    }
-
-                    if (this.isProcessableFile(file)) {
-                        fileCount++;
-                        totalBytes += fileStats.size;
+            let skippedCount = 0;
+            const totalFiles = files.length;
+            
+            // Process in small batches to avoid overwhelming the system
+            const BATCH_SIZE = 10;
+            for (let i = 0; i < files.length; i += BATCH_SIZE) {
+                const batch = files.slice(i, i + BATCH_SIZE);
+                
+                // Process batch in parallel but with controlled concurrency
+                await Promise.all(batch.map(async (file) => {
+                    try {
+                        const relativePath = path.relative(workspacePath, file);
                         
-                        await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes);
-                        
-                        processedCount++;
-                        const progressPercent = Math.floor((processedCount / files.length) * 100);
-                        progressCallback(`Processed: ${processedCount}/${files.length} files`, progressPercent / 100);
+                        try {
+                            const fileStats = await stat(file);
+                            
+                            // Skip files that are too large
+                            if (fileStats.size > maxFileSizeBytes) {
+                                progressCallback(`Skipping large file: ${relativePath} (${(fileStats.size / MB).toFixed(1)} MB)`, 0);
+                                skippedCount++;
+                                return;
+                            }
+
+                            if (this.isProcessableFile(file)) {
+                                fileCount++;
+                                totalBytes += fileStats.size;
+                                
+                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes);
+                            } else {
+                                skippedCount++;
+                            }
+                        } catch (statErr) {
+                            console.error(`Error getting stats for file ${file}:`, statErr);
+                            skippedCount++;
+                        }
+                    } catch (fileErr) {
+                        console.error(`Error processing file ${file}:`, fileErr);
+                        skippedCount++;
                     }
-                } catch (err) {
-                    console.error(`Error processing file ${file}:`, err);
-                }
+                }));
+                
+                processedCount += batch.length;
+                const progress = Math.min(0.2 + 0.7 * (processedCount / totalFiles), 0.9);
+                progressCallback(`Processed: ${processedCount}/${totalFiles} files (${skippedCount} skipped)`, progress);
             }
 
+            progressCallback(`Counting directories...`, 0.95);
+            
             // Count directories
             const dirCount = await this.countDirectories(workspacePath);
 
             // Generate summary
-            const summary = this.generateSummary(fileCount, dirCount, totalBytes);
+            const endTime = new Date();
+            const duration = (endTime.getTime() - startTime.getTime()) / 1000; // in seconds
+            const summary = this.generateSummary(fileCount, dirCount, totalBytes, duration);
+            
+            progressCallback(`Finalizing output...`, 0.98);
             
             // Prepend summary to the first output file
             const firstOutputFilePath = path.join(this.outputFileDirectory, `${this.baseOutputFileName}${this.outputFileExtension}`);
-            const content = await readFile(firstOutputFilePath, 'utf8');
-            await writeFile(firstOutputFilePath, summary + content);
+            try {
+                const content = await readFile(firstOutputFilePath, 'utf8');
+                await writeFile(firstOutputFilePath, summary + content);
+            } catch (readErr) {
+                console.error('Error updating summary in output file:', readErr);
+                // Try to write the summary on its own if we can't read the original file
+                await writeFile(firstOutputFilePath, summary);
+            }
 
-            progressCallback("Completed flattening source code", 100);
+            progressCallback(`Completed flattening source code`, 1.0);
             
         } catch (err) {
             console.error('Error in flattenWorkspace:', err);
+            progressCallback(`Error: ${(err as Error).message}`, 1.0);
             throw err;
         }
     }
@@ -154,19 +233,51 @@ export class CodeFlattener {
     }
 
     /**
-     * Simple glob pattern matching
+     * More robust glob pattern matching
+     * @param filePath The path to check against the pattern
+     * @param pattern The glob pattern
+     * @returns Whether the path matches the pattern
      */
-    private matchGlobPattern(path: string, pattern: string): boolean {
+    private matchGlobPattern(filePath: string, pattern: string): boolean {
+        // Use minimatch-like logic with a more robust implementation
+        
+        // Normalize paths to use forward slashes for consistency
+        const normalizedPath = filePath.replace(/\\/g, '/');
+        const normalizedPattern = pattern.replace(/\\/g, '/');
+        
+        // Fast path: exact match
+        if (normalizedPath === normalizedPattern) {
+            return true;
+        }
+        
+        // Fast path: simple * at the end (common case)
+        if (normalizedPattern.endsWith('/*') && normalizedPath.startsWith(normalizedPattern.slice(0, -1))) {
+            return normalizedPath.indexOf('/', normalizedPattern.length - 1) === -1;
+        }
+        
+        // Fast path: simple ** at the end (common case)
+        if (normalizedPattern.endsWith('/**') && normalizedPath.startsWith(normalizedPattern.slice(0, -2))) {
+            return true;
+        }
+        
         // Convert glob pattern to regex
-        const regexPattern = pattern
+        let regexPattern = normalizedPattern
             .replace(/\./g, '\\.')           // Escape dots
             .replace(/\*\*/g, '{{GLOBSTAR}}') // Temp replace ** for later
             .replace(/\*/g, '[^/]*')         // Replace * with regex for non-path parts
             .replace(/\?/g, '[^/]')          // Replace ? with regex for single char
-            .replace(/{{GLOBSTAR}}/g, '.*'); // Replace ** with regex for any characters
-
-        const regex = new RegExp(`^${regexPattern}$`);
-        return regex.test(path);
+            .replace(/{{GLOBSTAR}}/g, '.*')   // Replace ** with regex for any characters
+            .replace(/\[([^\]]+)\]/g, match => {
+                // Handle character classes [abc] and negated classes [!abc]
+                if (match.startsWith('[!')) {
+                    return `[^${match.slice(2, -1)}]`;
+                }
+                return match;
+            });
+            
+        // Ensure we match the entire string
+        const regex = new RegExp(`^${regexPattern}$`, 'i'); // case-insensitive matching for Windows compatibility
+        return regex.test(normalizedPath);
     }
 
     /**
@@ -236,17 +347,59 @@ export class CodeFlattener {
 
     /**
      * Check if a file is of a processable type
+     * @param filePath Path to the file to check
+     * @returns True if the file should be processed, false otherwise
      */
     private isProcessableFile(filePath: string): boolean {
         const ext = path.extname(filePath).toLowerCase();
-        // List of extensions to process - can be expanded
-        const allowedExts = ['.ps1', '.cs', '.sln', '.md', '.txt', '.json', '.xml', '.yaml', '.yml', '.py', '.js', '.ts', '.html', '.css', '.scss', '.less', '.jsx', '.tsx'];
+        const fileName = path.basename(filePath).toLowerCase();
         
-        return allowedExts.includes(ext);
+        // Special handling for known file types without extensions
+        if (['dockerfile', 'makefile', 'jenkinsfile', 'vagrantfile', '.gitignore', '.dockerignore', '.env'].includes(fileName)) {
+            return true;
+        }
+        
+        // Skip binary files and very large files by extension
+        const binaryExts = [
+            // Binaries and executables
+            '.exe', '.dll', '.so', '.dylib', '.bin', '.o', '.obj',
+            // Media files
+            '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.mp3', '.mp4', '.avi', '.mov',
+            // Compressed files
+            '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2',
+            // Database files
+            '.db', '.sqlite', '.mdb'
+        ];
+        
+        if (binaryExts.includes(ext)) {
+            return false;
+        }
+        
+        // List of extensions to process
+        const allowedExts = [
+            // Code files
+            '.ps1', '.cs', '.sln', '.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.c', '.cpp', '.h', '.hpp',
+            '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.pl', '.sh', '.bash',
+            // Web files
+            '.html', '.htm', '.css', '.scss', '.less', '.svg',
+            // Config and data files
+            '.json', '.xml', '.yaml', '.yml', '.toml', '.ini', '.conf', '.config', '.lock',
+            // Documentation
+            '.md', '.txt', '.rst', '.adoc', '.tex', '.texi',
+            // Project files
+            '.csproj', '.vbproj', '.vcxproj', '.fsproj', '.gradle', '.pom', '.cargo', '.project', '.pbxproj',
+            // Containerization
+            '.Dockerfile', '.docker-compose', '.kube', '.tf', '.tfvars'
+        ];
+        
+        return allowedExts.includes(ext) || ext === '';
     }
 
     /**
      * Process the contents of a file
+     * @param filepath Path to the file to process
+     * @param projectDir Base project directory path
+     * @param maxOutputFileSizeBytes Maximum size for output file before rotation
      */
     private async processFileContents(
         filepath: string, 
@@ -260,17 +413,35 @@ export class CodeFlattener {
                 return;
             }
             
-            await this.writeLineToOutput("", maxOutputFileSizeBytes);
-            await this.writeLineToOutput(`## ${relativePath}`, maxOutputFileSizeBytes);
+            // Prepare header content
+            let output = "\n## " + relativePath + "\n\n";
             
-            const content = await readFile(filepath, 'utf8');
-            
-            if (filepath.endsWith('.md')) {
-                // Strip markdown formatting
-                const strippedContent = this.stripMarkdown(content);
-                await this.writeBlockToOutput(strippedContent, maxOutputFileSizeBytes);
-            } else {
-                await this.writeBlockToOutput(content, maxOutputFileSizeBytes);
+            try {
+                // Read file with error handling
+                const content = await readFile(filepath, 'utf8');
+                
+                // Process content based on file type
+                if (filepath.endsWith('.md')) {
+                    // Strip markdown formatting
+                    output += this.stripMarkdown(content);
+                } else {
+                    output += content;
+                }
+                
+                // Write in a single operation rather than line by line
+                await this.writeBlockToOutput(output, maxOutputFileSizeBytes);
+            } catch (readErr) {
+                // Handle specific read errors
+                if ((readErr as NodeJS.ErrnoException).code === 'ENOENT') {
+                    console.error(`File not found: ${filepath}`);
+                    await this.writeLineToOutput(`[Error: File not found]`, maxOutputFileSizeBytes);
+                } else if ((readErr as NodeJS.ErrnoException).code === 'EACCES') {
+                    console.error(`Permission denied for file: ${filepath}`);
+                    await this.writeLineToOutput(`[Error: Permission denied]`, maxOutputFileSizeBytes);
+                } else {
+                    console.error(`Error reading file ${filepath}:`, readErr);
+                    await this.writeLineToOutput(`[Error: Could not read file]`, maxOutputFileSizeBytes);
+                }
             }
         } catch (err) {
             console.error(`Error processing file contents for ${filepath}:`, err);
@@ -278,25 +449,65 @@ export class CodeFlattener {
     }
 
     /**
-     * Strip markdown formatting from content
+     * Strip markdown formatting from content or transform it to plain text
+     * @param content The markdown content to strip
+     * @returns Plain text version of the content
      */
     private stripMarkdown(content: string): string {
-        // Remove markdown headers
-        let result = content.replace(/^#+\s*/gm, '');
-        // Remove bold: **text**
+        if (!content || content.trim() === '') {
+            return '';
+        }
+        
+        // Handle common markdown syntax
+        let result = content;
+        
+        // Replace horizontal rules with line breaks
+        result = result.replace(/^(---|___|\*\*\*)(\s*)?$/gm, '\n---\n');
+        
+        // Replace headers with plain text, but keep the content prominent
+        result = result.replace(/^(#{1,6})\s+(.+)$/gm, (_, hashtags, title) => {
+            const prefix = '\n' + '='.repeat(hashtags.length) + ' ';
+            const suffix = ' ' + '='.repeat(hashtags.length) + '\n';
+            return `${prefix}${title}${suffix}`;
+        });
+        
+        // Remove bold: **text** or __text__
         result = result.replace(/\*\*([^*]+)\*\*/g, '$1');
-        // Remove italic: *text*
+        result = result.replace(/__([^_]+)__/g, '$1');
+        
+        // Remove italic: *text* or _text_
         result = result.replace(/\*([^*]+)\*/g, '$1');
-        // Remove underline: _text_
         result = result.replace(/_([^_]+)_/g, '$1');
-        // Remove links: [text](url)
-        result = result.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
-        // Remove code blocks (from ``` to ```)
-        result = result.replace(/```[\s\S]*?```/g, '');
+        
+        // Replace blockquotes with indented text
+        result = result.replace(/^>\s*(.*)$/gm, '   $1');
+        
+        // Replace lists with plain text
+        result = result.replace(/^[\s]*[\*\-\+]\s+(.*)$/gm, '• $1');
+        result = result.replace(/^[\s]*\d+\.\s+(.*)$/gm, '• $1');
+        
+        // Preserve code blocks but remove markdown syntax
+        result = result.replace(/```(?:\w+)?\n([\s\S]*?)```/g, (_, code) => {
+            return '\n--- CODE ---\n' + code.trim() + '\n--- END CODE ---\n';
+        });
+        
         // Remove inline code: `text`
         result = result.replace(/`([^`]+)`/g, '$1');
         
-        return result;
+        // Replace links: [text](url) with just text
+        result = result.replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+        
+        // Replace image links: ![alt](url) with [Image: alt]
+        result = result.replace(/!\[([^\]]+)\]\([^)]*\)/g, '[Image: $1]');
+        
+        // Replace tables with simplified format
+        result = result.replace(/\|(.+)\|/g, '$1');
+        result = result.replace(/^[\s]*[-:]+[-:\s]*$/gm, '');
+        
+        // Remove extra whitespace
+        result = result.replace(/\n{3,}/g, '\n\n');
+        
+        return result.trim();
     }
 
     /**
@@ -323,15 +534,40 @@ export class CodeFlattener {
 
     /**
      * Generate a summary of the flattening process
+     * @param fileCount Number of files processed
+     * @param dirCount Number of directories scanned
+     * @param totalBytes Total size in bytes
+     * @param duration Duration of process in seconds (optional)
+     * @returns Formatted summary string
      */
-    private generateSummary(fileCount: number, dirCount: number, totalBytes: number): string {
+    private generateSummary(fileCount: number, dirCount: number, totalBytes: number, duration?: number): string {
         const approxTokens = Math.floor(totalBytes / 4);
+        
+        // Format sizes in a more readable way
+        let sizeStr = `${totalBytes} bytes`;
+        if (totalBytes > MB) {
+            sizeStr = `${(totalBytes / MB).toFixed(2)} MB (${totalBytes} bytes)`;
+        } else if (totalBytes > KB) {
+            sizeStr = `${(totalBytes / KB).toFixed(2)} KB (${totalBytes} bytes)`;
+        }
+        
+        // Format duration if provided
+        let durationStr = '';
+        if (duration !== undefined) {
+            if (duration < 60) {
+                durationStr = `\nProcessing time: ${duration.toFixed(2)} seconds`;
+            } else {
+                const minutes = Math.floor(duration / 60);
+                const seconds = duration % 60;
+                durationStr = `\nProcessing time: ${minutes} minutes ${seconds.toFixed(0)} seconds`;
+            }
+        }
         
         return `Repository Summary:
 Files analyzed: ${fileCount}
 Directories scanned: ${dirCount}
-Total size: ${totalBytes} bytes
-Estimated tokens: ${approxTokens}
+Total size: ${sizeStr}
+Estimated tokens: ${approxTokens}${durationStr}
 
 `;
     }
@@ -351,13 +587,28 @@ Estimated tokens: ${approxTokens}
 
     /**
      * Write a line to the output file, rotating if necessary
+     * @param line The line to write
+     * @param maxOutputFileSizeBytes Maximum file size before rotation
      */
     private async writeLineToOutput(line: string, maxOutputFileSizeBytes: number): Promise<void> {
-        await fs.promises.appendFile(this.currentOutputFile, line + '\n');
-        
+        // Use the block writer with a newline for consistency
+        await this.writeBlockToOutput(line + '\n', maxOutputFileSizeBytes);
+    }
+
+    /**
+     * Write a block of text, handling file rotation if needed
+     * @param block The text block to write
+     * @param maxOutputFileSizeBytes Maximum file size before rotation
+     */
+    private async writeBlockToOutput(block: string, maxOutputFileSizeBytes: number): Promise<void> {
+        // Check current file size before writing
         try {
             const stats = await stat(this.currentOutputFile);
-            if (stats.size > maxOutputFileSizeBytes) {
+            const currentSize = stats.size;
+            const blockSize = Buffer.byteLength(block, 'utf8');
+            
+            // If adding this block would exceed max size, rotate the file first
+            if (currentSize + blockSize > maxOutputFileSizeBytes) {
                 this.filePart++;
                 this.currentOutputFile = path.join(
                     this.outputFileDirectory, 
@@ -367,18 +618,11 @@ Estimated tokens: ${approxTokens}
                 const header = `# Project Digest Continued: ${this.projectName}\nGenerated on: ${new Date().toString()}\n\n`;
                 await writeFile(this.currentOutputFile, header);
             }
+            
+            // Write the entire block at once instead of line by line
+            await fs.promises.appendFile(this.currentOutputFile, block);
         } catch (err) {
-            console.error('Error in writeLineToOutput:', err);
-        }
-    }
-
-    /**
-     * Write a block of text (line by line)
-     */
-    private async writeBlockToOutput(block: string, maxOutputFileSizeBytes: number): Promise<void> {
-        const lines = block.split('\n');
-        for (const line of lines) {
-            await this.writeLineToOutput(line, maxOutputFileSizeBytes);
+            console.error('Error in writeBlockToOutput:', err);
         }
     }
 }

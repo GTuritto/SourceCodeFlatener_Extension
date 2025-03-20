@@ -6,11 +6,15 @@ This extension flattens source code files in a project into a single or multiple
 
 - Flattens source code from your workspace into a single markdown file (or multiple if size exceeds limits)
 - Automatically creates a `CodeFlattened` folder (configurable) in your project root
-- Provides a directory structure overview
-- Includes full source code content of each file
+- Provides a directory structure overview and comprehensive file listing
+- Includes full source code content of each file with proper formatting
+- Intelligently processes and formats markdown files for better readability
 - Ignores binary files, build directories, and other configurable patterns
-- Tracks file sizes and estimated token counts
-- Progress indicator during processing
+- Supports a wide range of file types including code, config, documentation, and more
+- Tracks file sizes and estimated token counts with human-readable formatting
+- Detailed progress indicators with status updates during processing
+- Parallel file processing for improved performance on large codebases
+- Robust error handling to continue processing despite individual file failures
 
 ## Usage
 
@@ -33,11 +37,35 @@ This extension contributes the following settings:
 
 The extension scans your project directory, ignoring paths that match exclude patterns, and includes files that match appropriate code file extensions. It creates a markdown file that includes:
 
-1. A summary section with file counts and size information
-2. A directory structure visualization
-3. The content of each source file
+1. A summary section with file counts, size information, and processing time
+2. A directory structure visualization with folders and files
+3. The complete content of each source file with proper formatting
 
 Large output files are automatically split into multiple parts to avoid token limits when used with AI tools.
+
+## Performance Optimizations
+
+This extension is optimized for performance and reliability:
+
+- **Parallel Processing**: Files are processed in parallel batches for faster execution
+- **Efficient File I/O**: Minimizes disk operations by batching writes and optimizing content handling
+- **Smart File Filtering**: Uses efficient glob pattern matching with fast-path optimizations
+- **Memory Management**: Handles large files gracefully to avoid memory issues
+- **Robust Error Handling**: Continues processing even if individual files have issues
+- **Progress Reporting**: Provides detailed progress updates during processing
+
+## Supported File Types
+
+The extension supports a wide range of file types including:
+
+- **Code Files**: `.js`, `.ts`, `.py`, `.java`, `.c`, `.cpp`, `.cs`, `.go`, `.rb`, `.php`, etc.
+- **Web Files**: `.html`, `.css`, `.scss`, `.less`, `.svg`, etc.
+- **Config Files**: `.json`, `.xml`, `.yaml`, `.yml`, `.toml`, `.ini`, etc.
+- **Documentation**: `.md`, `.txt`, `.rst`, etc.
+- **Project Files**: `.csproj`, `.vbproj`, `.gradle`, etc.
+- **Special Files**: `Dockerfile`, `Makefile`, `.gitignore`, etc.
+
+Binary files and media files are automatically excluded from processing.
 
 ## Credits
 
