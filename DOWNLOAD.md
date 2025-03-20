@@ -2,7 +2,7 @@
 
 ## Quick Download
 
-**[⬇️ Download the latest version (v1.1.0)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)**
+**[⬇️ Download the latest version (v1.1.0)](https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)**
 
 ## How to Install
 

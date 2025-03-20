@@ -1,10 +1,10 @@
 # Source Code Flattener VSCode Extension
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
-[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GTuritto.source-code-flattener)
+[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener)
 
-> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)**
+> **⬇️ [Download Extension](https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)**
 >
 > One-click download and install! See [installation instructions](#direct-download-easiest-method).
 
@@ -29,7 +29,7 @@ This extension flattens source code files in a project into a single or multiple
 
 ### Direct Download (Easiest Method)
 
-1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.1.0.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)
+1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.1.0.vsix](https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)
 
 2. Install it in VS Code:
    - Open VS Code
@@ -48,7 +48,7 @@ code --install-extension source-code-flattener-1.1.0.vsix
 
 ```bash
 # One-command installation
-git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git && \
+git clone https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension.git && \
 cd SourceCodeFlatener_Extension && \
 npm install && \
 code --install-extension .
@@ -66,7 +66,7 @@ code --install-extension .
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git
+   git clone https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension.git
    ```
 
 2. Install the dependencies:
@@ -192,4 +192,4 @@ After running the script, you should:
 
 ## Credits
 
-Based on the shell script from [GTuritto/SourceCodeFlatener](https://github.com/GTuritto/SourceCodeFlatener).
+Based on the shell script from [GiuseppeTuritto/SourceCodeFlatener](https://github.com/GiuseppeTuritto/SourceCodeFlatener).

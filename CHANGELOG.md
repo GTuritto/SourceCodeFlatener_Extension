@@ -4,6 +4,11 @@ All notable changes to the "Source Code Flattener" extension will be documented 
 
 ## [1.1.0] - 2025-03-20
 
+### Important Changes
+
+- Updated publisher ID from 'GTuritto' to 'GiuseppeTuritto' to match VS Code marketplace account
+- Updated all repository URLs and references accordingly
+
 ### New Features
 
 - Added automatic dependency detection and documentation for code files
