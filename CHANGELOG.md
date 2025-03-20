@@ -6,8 +6,8 @@ All notable changes to the "Source Code Flattener" extension will be documented 
 
 ### Important Changes
 
-- Updated publisher ID from 'GTuritto' to 'GiuseppeTuritto' to match VS Code marketplace account
-- Updated all repository URLs and references accordingly
+- Updated VS Code marketplace publisher ID from 'GTuritto' to 'GiuseppeTuritto'
+- Maintained GitHub repository URLs as 'GTuritto'
 
 ### New Features
 

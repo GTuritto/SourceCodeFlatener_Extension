@@ -87,11 +87,11 @@
     "code export",
     "vscode extension"
   ],
-  "author": "GiuseppeTuritto",
+  "author": "GTuritto",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GiuseppeTuritto/SourceCodeFlatener_Extension.git"
+    "url": "https://github.com/GTuritto/SourceCodeFlatener_Extension.git"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",
