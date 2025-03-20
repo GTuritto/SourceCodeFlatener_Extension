@@ -77,7 +77,15 @@
     "flattener",
     "documentation",
     "AI",
-    "LLM"
+    "LLM",
+    "markdown",
+    "code to markdown",
+    "code summary",
+    "chatgpt",
+    "gpt",
+    "large language model",
+    "code export",
+    "vscode extension"
   ],
   "author": "GTuritto",
   "license": "MIT",

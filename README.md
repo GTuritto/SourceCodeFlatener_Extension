@@ -1,5 +1,11 @@
 # Source Code Flattener VSCode Extension
 
+[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GTuritto.source-code-flattener)
+
+> 🚀 Easy installation: Clone, install dependencies, and use VS Code's extension installer!
+
 This extension flattens source code files in a project into a single or multiple markdown files in a dedicated folder, making it easy for AI assistants and LLMs to access and understand the codebase.
 
 ## Features
@@ -18,6 +24,16 @@ This extension flattens source code files in a project into a single or multiple
 
 ## Installation
 
+### Quick Install from GitHub
+
+```bash
+# One-command installation
+git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git && \
+cd SourceCodeFlatener_Extension && \
+npm install && \
+code --install-extension .
+```
+
 ### From VS Code Marketplace
 
 1. Open VS Code
@@ -25,7 +41,7 @@ This extension flattens source code files in a project into a single or multiple
 3. Search for "Source Code Flattener"
 4. Click Install
 
-### From GitHub
+### Manual Installation from GitHub
 
 1. Clone the repository:
 
@@ -43,15 +59,10 @@ This extension flattens source code files in a project into a single or multiple
 3. Install the extension locally:
 
    ```bash
-   code --install-extension source-code-flattener-1.0.0.vsix
-   ```
-
-   Or, if you don't have the VSIX file:
-
-   ```bash
-   npm run compile
    code --install-extension .
    ```
+
+   Note: The compiled files are already included in the repository, so you don't need to compile anything yourself!
 
 ## Usage
 
