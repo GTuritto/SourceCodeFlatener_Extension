@@ -4,7 +4,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GTuritto.source-code-flattener)
 
-> 🚀 Easy installation: Clone, install dependencies, and use VS Code's extension installer!
+> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.0.vsix)**
+>
+> One-click download and install! See [installation instructions](#direct-download-easiest-method).
 
 This extension flattens source code files in a project into a single or multiple markdown files in a dedicated folder, making it easy for AI assistants and LLMs to access and understand the codebase.
 
@@ -23,6 +25,23 @@ This extension flattens source code files in a project into a single or multiple
 - Robust error handling to continue processing despite individual file failures
 
 ## Installation
+
+### Direct Download (Easiest Method)
+
+1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.0.0.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.0.0.vsix)
+
+2. Install it in VS Code:
+   - Open VS Code
+   - Go to Extensions view (Ctrl+Shift+X or Cmd+Shift+X on macOS)
+   - Click on the three dots (...) in the top-right corner
+   - Select "Install from VSIX..."
+   - Choose the downloaded VSIX file
+
+Or use this command after downloading:
+
+```bash
+code --install-extension source-code-flattener-1.0.0.vsix
+```
 
 ### Quick Install from GitHub
 
