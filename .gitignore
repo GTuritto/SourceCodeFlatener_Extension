@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn.lock
+package-lock.json
+
+# Build output
+out/
+dist/
+lib/
+*.vsix
+
+# Testing
+.vscode-test/
+coverage/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE specific files
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.history
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Project specific
+CodeFlattened/
+.env
+*.log

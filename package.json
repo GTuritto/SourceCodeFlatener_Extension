@@ -1,0 +1,91 @@
+{
+  "name": "source-code-flattener",
+  "displayName": "Source Code Flattener",
+  "version": "1.0.0",
+  "description": "VSCode extension that flattens source code files into a dedicated folder for easy access by AI assistants and LLMs",
+  "publisher": "GTuritto",
+  "engines": {
+    "vscode": "^1.98.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "source-code-flattener.flattenCode",
+        "title": "Flatten Source Code"
+      }
+    ],
+    "configuration": {
+      "title": "Source Code Flattener",
+      "properties": {
+        "sourceCodeFlattener.outputFolder": {
+          "type": "string",
+          "default": "CodeFlattened",
+          "description": "Name of the folder where flattened source code will be saved"
+        },
+        "sourceCodeFlattener.excludePatterns": {
+          "type": "array",
+          "default": [
+            "bin/**",
+            "obj/**",
+            "node_modules/**",
+            "**/CodeFlattened/**",
+            "**/*.dll",
+            "**/*.exe",
+            "**/*.pdb"
+          ],
+          "description": "Patterns to exclude from processing (glob format)"
+        },
+        "sourceCodeFlattener.includePatterns": {
+          "type": "array",
+          "default": [],
+          "description": "Patterns to include in processing (glob format). If empty, all files will be processed except those matching exclude patterns"
+        },
+        "sourceCodeFlattener.maxFileSizeBytes": {
+          "type": "number",
+          "default": 10485760,
+          "description": "Maximum file size in bytes for analysis (default: 10MB)"
+        },
+        "sourceCodeFlattener.maxOutputFileSizeBytes": {
+          "type": "number",
+          "default": 5242880,
+          "description": "Maximum output file size in bytes before rotation (default: 5MB)"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "keywords": [
+    "source code",
+    "flattener",
+    "documentation",
+    "AI",
+    "LLM"
+  ],
+  "author": "GTuritto",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GTuritto/SourceCodeFlatener_Extension.git"
+  },
+  "devDependencies": {
+    "@types/glob": "^8.1.0",
+    "@types/node": "^22.13.10",
+    "@types/vscode": "^1.98.0",
+    "typescript": "^5.8.2",
+    "vscode-test": "^1.6.1"
+  },
+  "dependencies": {
+    "glob": "^8.1.0"
+  }
+}
