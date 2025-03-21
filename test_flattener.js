@@ -295,6 +295,14 @@ async function runTests() {
     outputFolder: 'CodeFlattened/llm_optimized'
   });
 
+  // Test the new dependency diagram feature
+  tester.addTest('Dependency Diagram Feature', {
+    includePatterns: ['**/*.js'],
+    cleanOutput: true,
+    verbose: true,
+    outputFolder: 'CodeFlattened/dependency_diagram_test'
+  });
+
   // Run all tests
   await tester.runAllTests();
 }

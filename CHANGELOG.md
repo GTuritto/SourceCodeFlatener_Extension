@@ -2,11 +2,20 @@
 
 All notable changes to the "Source Code Flattener" extension will be documented in this file.
 
+## [1.5.1] - 2025-03-21
+
+### Improvements
+
+- Consolidated output files into a single comprehensive file instead of separate files for flattened code and analysis
+- Added dependency visualization using Mermaid diagrams at the end of the output file
+- Improved table of contents with navigation links to specific files
+- Enhanced code organization with anchor links for better navigation
+
 ## [1.5.0] - 2025-03-21
 
-### New Features
+### Added
 
-- Added extensive support for multiple programming languages:
+- Extensive support for multiple programming languages:
   - Rust - Detects `use` and `extern crate` statements
   - Swift - Detects `import` statements
   - Kotlin - Detects `import` statements with optional alias
@@ -19,7 +28,7 @@ All notable changes to the "Source Code Flattener" extension will be documented 
   - SQL - Detects table references from `FROM` and `JOIN` clauses
 - Enhanced syntax highlighting mapping for newly supported languages
 
-### Improvements
+### Changed
 
 - Updated existing language support with additional file extensions
 - Improved dependency detection patterns for more accurate results
@@ -27,17 +36,17 @@ All notable changes to the "Source Code Flattener" extension will be documented 
 
 ## [1.1.0] - 2025-03-20
 
-### Important Changes
+### Publisher Change
 
 - Updated VS Code marketplace publisher ID from 'GTuritto' to 'GiuseppeTuritto'
 - Maintained GitHub repository URLs as 'GTuritto'
 
-### New Features
+### Feature Additions
 
-- Added automatic dependency detection and documentation for code files
+- Automatic dependency detection and documentation for code files
 - Support for detecting imports in multiple programming languages including JavaScript, TypeScript, Python, Java, C#, C/C++, Go, PHP, Ruby, Rust, HTML, and CSS
 
-### Improvements
+### Other Improvements
 
 - Enhanced installation documentation and direct download options
 - Added one-click installation from GitHub repository

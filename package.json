@@ -1,8 +1,8 @@
 {
   "name": "source-code-flattener",
   "displayName": "Source Code Flattener",
-  "version": "1.5.0",
-  "description": "Flatten source code files into markdown for easy access by AI assistants and LLMs",
+  "version": "1.5.1",
+  "description": "Transform your codebase into a perfectly structured markdown document - Boost AI coding assistants with full context, simplify code reviews, and share your projects effortlessly",
   "publisher": "GiuseppeTuritto",
   "engines": {
     "vscode": "^1.98.0"

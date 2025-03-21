@@ -65,6 +65,8 @@ export class CodeFlattener {
     
     // Complete processed content saved for final output formatting
     private processedContent = '';
+    // Track file dependencies for dependency diagram
+    private fileDependencies = new Map<string, string[]>();
     // Configuration for code analysis
     private supportedExtensions = [
         '.js', '.ts', '.py', '.java', '.cs', '.go', '.php', '.rb', '.rs'
@@ -110,6 +112,11 @@ export class CodeFlattener {
             this.outputFileDirectory = outputFolderPath;
             this.currentOutputFile = outputFilePath;
             this.filePart = 1;
+            
+            // Clear maps and tracking variables for fresh run
+            this.fileMap.clear();
+            this.symbolMap.clear();
+            this.fileDependencies.clear();
 
             // Initialize output file with header
             const startTime = new Date();
@@ -224,65 +231,37 @@ Project Directory: ${workspacePath}
             // Count directories
             const dirCount = await this.countDirectories(workspacePath);
 
+            // Generate dependency diagram
+            const dependencyDiagramContent = this.generateMermaidDependencyDiagram();
+
             // Generate summary
             const endTime = new Date();
             const duration = (endTime.getTime() - startTime.getTime()) / 1000; // in seconds
             const summary = this.generateSummary(fileCount, dirCount, totalBytes, duration);
             
-            progressCallback(`Finalizing output...`, 0.98);
+            progressCallback(`Finalizing output...`, 0.95);
             
-            // Prepend summary to the first output file
+            // Append dependency diagram to the output file
+            await this.writeBlockToOutput(dependencyDiagramContent, maxOutputFileSizeBytes);
+            
+            // Prepend summary and table of contents to the first output file
             const firstOutputFilePath = path.join(this.outputFileDirectory, `${this.baseOutputFileName}${this.outputFileExtension}`);
             try {
+                // Create table of contents
+                const tableOfContents = this.generateTableOfContents();
+                
+                // Read existing content
                 const content = await readFile(firstOutputFilePath, 'utf8');
-                await writeFile(firstOutputFilePath, summary + content);
+                
+                // Prepend summary and TOC
+                await writeFile(firstOutputFilePath, summary + tableOfContents + content);
+                
+                progressCallback(`Successfully created flattened source code file`, 0.98);
             } catch (readErr) {
                 console.error('Error updating summary in output file:', readErr);
                 // Try to write the summary on its own if we can't read the original file
                 await writeFile(firstOutputFilePath, summary);
             }
-
-            progressCallback(`Creating LLM-optimized output...`, 0.9);
-            
-            // Generate enhanced output with metadata for LLMs
-            const llmOptimizedContent = `# ${this.projectName} - Code Analysis
-
-## Table of Contents
-- [1. Source Code](#source-code)
-- [2. File Index](#file-index)
-- [3. AI Query Guide](#ai-query-guide)
-
-## 1. Source Code <a id="source-code"></a>
-
-${this.processedContent}
-
-## 2. File Index <a id="file-index"></a>
-
-This table lists all files in the codebase:
-
-| File | Language | Size | Dependencies |
-|------|----------|------|-------------|
-${this.fileCount > 0 ? Array.from(this.fileMap.values())
-    .map(f => `| ${f.path} | ${f.language} | ${f.size} bytes | ${f.imports.join(', ')} |`)
-    .join('\n') : '| No files analyzed | | | |'}
-
-## 3. AI Query Guide <a id="ai-query-guide"></a>
-
-When analyzing this codebase, you can use these example queries:
-
-- "What's the main purpose of this codebase?"
-- "Show me how [component name] works"
-- "What files are related to [feature]?"
-- "What dependencies does [file] have?"
-- "How does [function] interact with other parts of the code?"
-`;
-            
-            // Write the optimized content to the final file with .md extension
-            const finalOutputFile = path.join(
-                outputFolderPath,
-                `${this.projectName}_code_analysis.md`
-            );
-            await fs.promises.writeFile(finalOutputFile, llmOptimizedContent);
             
             progressCallback(`Completed flattening source code`, 1.0);
             
@@ -907,8 +886,9 @@ When analyzing this codebase, you can use these example queries:
                 return;
             }
             
-            // Prepare header content
-            let output = "\n## " + relativePath + "\n\n";
+            // Prepare header content with anchor for TOC navigation
+            const safeAnchorName = path.basename(filepath).replace(/[\s.]+/g, '_');
+            let output = `\n## ${relativePath} <a id="${safeAnchorName}"></a>\n\n`;
             
             try {
                 // Read file with error handling
@@ -1144,6 +1124,9 @@ Estimated tokens: ${approxTokens}${durationStr}
         // Extract file extension and map to a language identifier
         const language = this.getHighlightLanguage(filepath);
 
+        // Store dependencies for the dependency diagram
+        this.fileDependencies.set(filepath, imports);
+
         // Add to file map
         this.fileMap.set(filepath, {
             path: filepath,
@@ -1152,6 +1135,93 @@ Estimated tokens: ${approxTokens}${durationStr}
             imports: imports,
             symbols: []
         });
+    }
+    
+    /**
+     * Generate a Mermaid dependency diagram based on file dependencies
+     * @returns Formatted Mermaid dependency diagram as a string
+     */
+    private generateMermaidDependencyDiagram(): string {
+        // If no dependencies were detected, return a minimal diagram
+        if (this.fileDependencies.size === 0) {
+            return '\n## Dependency Diagram\n\nNo dependencies detected in the codebase.\n';
+        }
+        
+        // Start building the Mermaid diagram
+        let diagram = '\n## Dependency Diagram\n\n';
+        diagram += 'Below is a visualization of file dependencies in the codebase:\n\n';
+        diagram += '```mermaid\ngraph TD\n';
+        
+        // Map to shorten filepath keys for better readability in diagram
+        const fileKeyMap = new Map<string, string>();
+        let fileIndex = 1;
+        
+        // Create a readable key for each file
+        for (const filepath of this.fileDependencies.keys()) {
+            const filename = path.basename(filepath);
+            const dirPart = path.dirname(filepath).split('/').pop() || '';
+            const shortKey = `F${fileIndex}_${dirPart ? dirPart + '_' : ''}${filename}`;
+            fileKeyMap.set(filepath, shortKey);
+            
+            // Add node definition with readable label
+            diagram += `  ${shortKey}["${filename}"]\n`;
+            fileIndex++;
+        }
+        
+        // Add relationships between files
+        for (const [filepath, dependencies] of this.fileDependencies.entries()) {
+            const fileKey = fileKeyMap.get(filepath) || '';
+            
+            // For each dependency, check if it's a file path we know about
+            for (const dep of dependencies) {
+                // Try to match the dependency to known files
+                let dependencyKey = '';
+                for (const knownFile of fileKeyMap.keys()) {
+                    if (knownFile.endsWith(dep) || knownFile.includes(dep)) {
+                        dependencyKey = fileKeyMap.get(knownFile) || '';
+                        if (dependencyKey) {
+                            // Add relationship arrow
+                            diagram += `  ${fileKey} --> ${dependencyKey}\n`;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // Close the Mermaid diagram
+        diagram += '```\n\n';
+        return diagram;
+    }
+    
+    /**
+     * Generate a table of contents for the flattened code document
+     * @returns Formatted table of contents as a string
+     */
+    private generateTableOfContents(): string {
+        // Create basic table of contents structure
+        let toc = '\n## Table of Contents\n\n';
+        toc += '- [Project Summary](#project-summary)\n';
+        toc += '- [Directory Structure](#directory-structure)\n';
+        toc += '- [Files Content](#files-content)\n';
+        
+        // Add file entries if we have any
+        if (this.fileMap.size > 0) {
+            toc += '  - Files:\n';
+            const files = Array.from(this.fileMap.keys()).sort();
+            for (let i = 0; i < Math.min(files.length, 15); i++) { // Limit to first 15 files
+                const file = files[i];
+                const safeName = path.basename(file).replace(/[\s.]+/g, '_');
+                toc += `    - [${path.basename(file)}](#${safeName})\n`;
+            }
+            if (files.length > 15) {
+                toc += `    - [and ${files.length - 15} more files...]\n`;
+            }
+        }
+        
+        toc += '- [Dependency Diagram](#dependency-diagram)\n\n';
+        toc += '## Project Summary <a id="project-summary"></a>\n\n';
+        return toc;
     }
     
     /**
