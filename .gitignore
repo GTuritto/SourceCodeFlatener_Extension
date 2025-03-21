@@ -9,8 +9,10 @@ package-lock.json
 # out/ - keeping compiled files for easy installation from GitHub
 dist/
 lib/
+
+# VSIX files (ignore all VSIX files except those in releases folder)
 *.vsix
-# But allow VSIX files in the releases directory
+# Exception: allow VSIX files ONLY in the releases directory
 !releases/*.vsix
 
 # Testing
