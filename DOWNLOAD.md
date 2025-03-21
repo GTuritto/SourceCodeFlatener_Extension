@@ -10,9 +10,13 @@ Installing from the marketplace is the recommended method as you'll receive auto
 
 **[⬇️ Download the latest version (v1.5.0)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-latest.vsix)**
 
-Or download a specific version:
+The link above will always download the most current version.
+
+Or download a specific version directly:
 
 - [Download v1.5.0 (Current)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-1.5.0.vsix)
+
+> Note: All version files are now properly maintained in the GitHub repository
 
 ## How to Install
 
