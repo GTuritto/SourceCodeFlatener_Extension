@@ -118,6 +118,7 @@ Install directly from the [VS Code Marketplace](https://marketplace.visualstudio
 **[⬇️ Download Latest Release (v1.5.1)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-1.5.1.vsix)**
 
 To install from VSIX:
+
 1. Download the file from the link above
 2. Open VS Code
 3. Go to Extensions view (Ctrl+Shift+X)
