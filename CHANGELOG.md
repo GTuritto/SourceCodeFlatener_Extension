@@ -2,6 +2,29 @@
 
 All notable changes to the "Source Code Flattener" extension will be documented in this file.
 
+## [1.5.0] - 2025-03-21
+
+### New Features
+
+- Added extensive support for multiple programming languages:
+  - Rust - Detects `use` and `extern crate` statements
+  - Swift - Detects `import` statements
+  - Kotlin - Detects `import` statements with optional alias
+  - Dart - Detects `import` and `part` statements
+  - Elixir - Detects `alias`, `import`, and `require` statements
+  - Erlang - Detects `-include` and `-include_lib` directives
+  - Terraform - Detects `module`, `provider`, and `resource` declarations
+  - Docker - Detects `FROM` statements in Dockerfiles
+  - Kubernetes/Docker Compose - Detects `image:` references
+  - SQL - Detects table references from `FROM` and `JOIN` clauses
+- Enhanced syntax highlighting mapping for newly supported languages
+
+### Improvements
+
+- Updated existing language support with additional file extensions
+- Improved dependency detection patterns for more accurate results
+- Extended the code flattener with better language detection capabilities
+
 ## [1.1.0] - 2025-03-20
 
 ### Important Changes

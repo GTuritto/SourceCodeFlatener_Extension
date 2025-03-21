@@ -91,10 +91,29 @@ class TestRunner {
       const outputFileStats = files.map(file => {
         const filePath = path.join(outputFolderPath, file);
         const stats = fs.statSync(filePath);
+        
+        // Check for LLM-optimized output file
+        const isLLMOptimized = file.includes('_code_analysis.md');
+        let llmSections = {};
+        
+        if (isLLMOptimized) {
+          // Read the file and validate sections
+          const content = fs.readFileSync(filePath, 'utf8');
+          llmSections = {
+            hasTableOfContents: content.includes('## Table of Contents'),
+            hasSourceCode: content.includes('## 1. Source Code'),
+            hasFileIndex: content.includes('## 2. File Index'), 
+            hasAIGuide: content.includes('## 3. AI Query Guide')
+          };
+          console.log('LLM-optimized output validation:', llmSections);
+        }
+        
         return {
           name: file,
           size: stats.size,
           sizeFormatted: `${(stats.size / 1024).toFixed(2)} KB`,
+          isLLMOptimized,
+          llmSections: isLLMOptimized ? llmSections : undefined
         };
       });
       
@@ -110,6 +129,7 @@ class TestRunner {
         success: true,
         elapsedTime,
         outputFiles: outputFileStats,
+        testCase,
       };
     } catch (error) {
       console.error(`Test failed: ${error.message}`);
@@ -152,6 +172,30 @@ class TestRunner {
     console.log(`Total tests: ${this.results.length}`);
     console.log(`Successful: ${successful}`);
     console.log(`Failed: ${failed}`);
+
+    // Report on LLM-optimized output files
+    const llmTests = this.results.filter(r => r.success && r.name === 'LLM Optimized Output');
+    if (llmTests.length > 0) {
+      console.log('\nLLM-Optimized Output Test Results:');
+      llmTests.forEach(test => {
+        const llmFiles = test.outputFiles?.filter(file => file.isLLMOptimized) || [];
+        if (llmFiles.length > 0) {
+          console.log(`- Found ${llmFiles.length} LLM-optimized output files`);
+          llmFiles.forEach(file => {
+            if (file.llmSections) {
+              const sections = file.llmSections;
+              console.log(`  - ${file.name} (${file.sizeFormatted})`);
+              console.log(`    Table of Contents: ${sections.hasTableOfContents ? '✓' : '✗'}`);
+              console.log(`    Source Code: ${sections.hasSourceCode ? '✓' : '✗'}`);
+              console.log(`    File Index: ${sections.hasFileIndex ? '✓' : '✗'}`);
+              console.log(`    AI Query Guide: ${sections.hasAIGuide ? '✓' : '✗'}`);
+            }
+          });
+        } else {
+          console.log(`- No LLM-optimized output files found in '${test.name}' test`);
+        }
+      });
+    }
     
     if (failed > 0) {
       console.log('\nFailed tests:');
@@ -241,6 +285,14 @@ async function runTests() {
     verbose: true,
     maxOutputFileSizeBytes: 1024 * 10, // Very small: 10KB to force splitting
     outputFolder: 'CodeFlattened/small_output_size'
+  });
+
+  // Test the new LLM-optimized output feature
+  tester.addTest('LLM Optimized Output', {
+    includePatterns: ['**/*.js', '**/*.ts'],
+    cleanOutput: true,
+    verbose: true,
+    outputFolder: 'CodeFlattened/llm_optimized'
   });
 
   // Run all tests

@@ -47,14 +47,32 @@ const globPromise = (0, util_1.promisify)(glob.glob);
 // File size constants (in bytes)
 const KB = 1024;
 const MB = 1024 * KB;
+/**
+ * CodeFlattener class that processes source code files and generates
+ * a single flattened file with code and LLM-optimized metadata
+ */
 class CodeFlattener {
     constructor() {
+        // Output file management
         this.filePart = 1;
         this.currentOutputFile = '';
         this.baseOutputFileName = '';
         this.outputFileExtension = '';
         this.outputFileDirectory = '';
         this.projectName = '';
+        this.currentFile = '';
+        // Symbol and relationship tracking
+        this.symbolMap = new Map();
+        this.fileMap = new Map();
+        this.totalBytes = 0;
+        this.fileCount = 0;
+        this.dirCount = 0;
+        // Complete processed content saved for final output formatting
+        this.processedContent = '';
+        // Configuration for code analysis
+        this.supportedExtensions = [
+            '.js', '.ts', '.py', '.java', '.cs', '.go', '.php', '.rb', '.rs'
+        ];
     }
     /**
      * Flatten the entire workspace
@@ -201,7 +219,44 @@ Project Directory: ${workspacePath}
                 // Try to write the summary on its own if we can't read the original file
                 await writeFile(firstOutputFilePath, summary);
             }
+            progressCallback(`Creating LLM-optimized output...`, 0.9);
+            // Generate enhanced output with metadata for LLMs
+            const llmOptimizedContent = `# ${this.projectName} - Code Analysis
+
+## Table of Contents
+- [1. Source Code](#source-code)
+- [2. File Index](#file-index)
+- [3. AI Query Guide](#ai-query-guide)
+
+## 1. Source Code <a id="source-code"></a>
+
+${this.processedContent}
+
+## 2. File Index <a id="file-index"></a>
+
+This table lists all files in the codebase:
+
+| File | Language | Size | Dependencies |
+|------|----------|------|-------------|
+${this.fileCount > 0 ? Array.from(this.fileMap.values())
+                .map(f => `| ${f.path} | ${f.language} | ${f.size} bytes | ${f.imports.join(', ')} |`)
+                .join('\n') : '| No files analyzed | | | |'}
+
+## 3. AI Query Guide <a id="ai-query-guide"></a>
+
+When analyzing this codebase, you can use these example queries:
+
+- "What's the main purpose of this codebase?"
+- "Show me how [component name] works"
+- "What files are related to [feature]?"
+- "What dependencies does [file] have?"
+- "How does [function] interact with other parts of the code?"
+`;
+            // Write the optimized content to the final file with .md extension
+            const finalOutputFile = path.join(outputFolderPath, `${this.projectName}_code_analysis.md`);
+            await fs.promises.writeFile(finalOutputFile, llmOptimizedContent);
             progressCallback(`Completed flattening source code`, 1.0);
+            // No additional artifacts needed as we've generated the comprehensive file
         }
         catch (err) {
             console.error('Error in flattenWorkspace:', err);
@@ -354,19 +409,101 @@ Project Directory: ${workspacePath}
         }
         // List of extensions to process
         const allowedExts = [
-            // Code files
-            '.ps1', '.cs', '.sln', '.py', '.js', '.ts', '.jsx', '.tsx', '.java', '.c', '.cpp', '.h', '.hpp',
-            '.go', '.rs', '.rb', '.php', '.swift', '.kt', '.pl', '.sh', '.bash',
+            // Code files - Compiled Languages
+            '.c', '.h', // C
+            '.cpp', '.cxx', '.cc', '.hpp', '.hxx', // C++
+            '.cs', // C#
+            '.java', // Java
+            '.go', // Go
+            '.rs', // Rust
+            '.scala', // Scala
+            '.kt', '.kts', // Kotlin
+            '.swift', // Swift
+            '.m', '.mm', // Objective-C
+            '.dart', // Dart/Flutter
+            '.ex', '.exs', // Elixir
+            '.erl', '.hrl', // Erlang
+            '.vb', '.vbs', // Visual Basic
+            '.fs', '.fsx', '.fsi', // F#
+            '.ada', '.adb', '.ads', // Ada
+            '.d', // D
+            '.zig', // Zig
+            // Code files - Scripting Languages
+            '.js', '.mjs', '.cjs', // JavaScript
+            '.ts', '.tsx', '.cts', '.mts', // TypeScript
+            '.jsx', // React JSX
+            '.py', '.pyi', '.pyw', // Python
+            '.php', '.phtml', '.php3', '.php4', // PHP
+            '.rb', '.rbw', // Ruby
+            '.pl', '.pm', // Perl
+            '.sh', '.bash', '.zsh', '.fish', // Shell scripts
+            '.ps1', '.psm1', '.psd1', // PowerShell
+            '.r', '.rmd', // R
+            '.lua', // Lua
+            '.groovy', // Groovy
+            '.tcl', // Tcl
             // Web files
-            '.html', '.htm', '.css', '.scss', '.less', '.svg',
-            // Config and data files
-            '.json', '.xml', '.yaml', '.yml', '.toml', '.ini', '.conf', '.config', '.lock',
+            '.html', '.htm', '.xhtml', // HTML
+            '.css', // CSS
+            '.scss', '.sass', // SASS
+            '.less', // LESS
+            '.svg', // SVG
+            '.vue', // Vue
+            '.svelte', // Svelte
+            '.astro', // Astro
+            // Data and Config files
+            '.json', '.jsonc', '.json5', // JSON
+            '.xml', '.xsd', '.dtd', // XML
+            '.yaml', '.yml', // YAML
+            '.toml', // TOML
+            '.ini', // INI
+            '.conf', '.config', // Config
+            '.properties', // Properties
+            '.lock', // Lock files
+            '.sql', '.mysql', '.pgsql', '.sqlite', // SQL
+            '.graphql', '.gql', // GraphQL
+            '.csv', '.tsv', // CSV
+            // Infrastructure and DevOps
+            '.tf', '.tfvars', '.hcl', // Terraform/HCL
+            '.dockerfile', 'Dockerfile', // Dockerfile (no extension)
+            '.docker-compose.yml', 'docker-compose.yml', // Docker Compose
+            '.k8s.yaml', '.kubernetes.yaml', // Kubernetes manifests
+            '.helm', // Helm charts
+            '.nix', // Nix
+            '.bicep', // Azure Bicep
+            '.cf.json', '.cf.yaml', // CloudFormation
+            '.cdktf.json', // CDK for Terraform
             // Documentation
-            '.md', '.txt', '.rst', '.adoc', '.tex', '.texi',
+            '.md', '.markdown', // Markdown
+            '.txt', // Text
+            '.rst', // reStructuredText
+            '.adoc', // AsciiDoc
+            '.tex', '.latex', // LaTeX
+            '.texi', // Texinfo
             // Project files
-            '.csproj', '.vbproj', '.vcxproj', '.fsproj', '.gradle', '.pom', '.cargo', '.project', '.pbxproj',
-            // Containerization
-            '.Dockerfile', '.docker-compose', '.kube', '.tf', '.tfvars'
+            '.sln', // VS Solution
+            '.csproj', '.vbproj', '.vcxproj', // Visual Studio projects
+            '.fsproj', // F# project
+            '.gradle', // Gradle
+            '.pom', // Maven
+            '.cargo', // Cargo (Rust)
+            '.project', // Eclipse
+            '.pbxproj', // Xcode
+            '.bazel', '.bzl', // Bazel
+            '.cmake', // CMake
+            'Makefile', '.makefile', // Make
+            '.cabal', // Haskell Cabal
+            // Mobile & Frontend Frameworks
+            '.xcodeproj', '.pbxproj', // iOS
+            '.storyboard', '.xib', // iOS UI
+            '.gradle', '.xml', // Android
+            '.dart', // Flutter
+            // Other important code formats
+            '.wasm', // WebAssembly
+            '.asm', '.s', // Assembly
+            '.proto', // Protocol Buffers
+            '.avsc', // Avro Schema
+            '.thrift' // Thrift
         ];
         return allowedExts.includes(ext) || ext === '';
     }
@@ -381,7 +518,7 @@ Project Directory: ${workspacePath}
         const ext = path.extname(filePath).toLowerCase();
         const fileName = path.basename(filePath);
         // Handle different file types differently
-        if (['.js', '.jsx', '.ts', '.tsx'].includes(ext)) {
+        if (['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs', '.mts', '.cts'].includes(ext)) {
             // JavaScript/TypeScript imports
             const importRegexes = [
                 /import\s+.*?from\s+['"]([^'"]+)['"];?/g, // ES6 imports
@@ -398,7 +535,7 @@ Project Directory: ${workspacePath}
                 }
             }
         }
-        else if (['.py'].includes(ext)) {
+        else if (['.py', '.pyi', '.pyw'].includes(ext)) {
             // Python imports
             const importRegexes = [
                 /import\s+([\w\d_.]+)/g, // import x
@@ -433,7 +570,7 @@ Project Directory: ${workspacePath}
                 }
             }
         }
-        else if (['.cpp', '.hpp', '.c', '.h'].includes(ext)) {
+        else if (['.cpp', '.hpp', '.c', '.h', '.cxx', '.cc', '.hxx'].includes(ext)) {
             // C/C++ includes
             const importRegex = /#include\s+[<"]([^>"]+)[>"]|#include\s+['"]([^'"]+)['"];?/g;
             let match;
@@ -441,6 +578,21 @@ Project Directory: ${workspacePath}
                 const dep = match[1] || match[2];
                 if (dep && !dependencies.includes(dep)) {
                     dependencies.push(dep);
+                }
+            }
+        }
+        else if (['.rs'].includes(ext)) {
+            // Rust imports
+            const importRegexes = [
+                /use\s+([\w\d_:]+(?:::\{[\w\d_,\s:]+\})?)(?:;|\s)/g, // use path::to::thing
+                /extern\s+crate\s+([\w\d_]+)(?:;|\s)/g // extern crate thing
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
                 }
             }
         }
@@ -468,7 +620,7 @@ Project Directory: ${workspacePath}
                 }
             }
         }
-        else if (['.php'].includes(ext)) {
+        else if (['.php', '.phtml', '.php3', '.php4'].includes(ext)) {
             // PHP includes
             const importRegexes = [
                 /require(_once)?\s+['"]([^'"]+)['"];?/g,
@@ -485,7 +637,42 @@ Project Directory: ${workspacePath}
                 }
             }
         }
-        else if (['.rb'].includes(ext)) {
+        else if (['.swift'].includes(ext)) {
+            // Swift imports
+            const importRegex = /import\s+([\w\d_]+)/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (['.kt', '.kts'].includes(ext)) {
+            // Kotlin imports
+            const importRegex = /import\s+([\w\d_.]+(?:\.[*])?)(?:\s+as\s+[\w\d_]+)?/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (['.dart'].includes(ext)) {
+            // Dart imports
+            const importRegexes = [
+                /import\s+['"](.+?)['"](?:\s+as\s+[\w\d_]+)?;/g, // import 'package:flutter/material.dart';
+                /part\s+['"](.+?)['"];/g // part 'file.dart';
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.rb', '.rbw'].includes(ext)) {
             // Ruby requires
             const importRegexes = [
                 /require\s+['"]([^'"]+)['"];?/g,
@@ -549,6 +736,75 @@ Project Directory: ${workspacePath}
                 }
             }
         }
+        else if (['.ex', '.exs'].includes(ext)) {
+            // Elixir imports
+            const importRegexes = [
+                /alias\s+([\w\d_.]+)(?:\.[\w\d_]+)?/g, // alias Module.Name
+                /import\s+([\w\d_]+)(?:\.\{[\w\d_,\s]+\})?/g, // import Module
+                /require\s+([\w\d_]+)/g // require Logger
+            ];
+            for (const regex of importRegexes) {
+                let match;
+                while ((match = regex.exec(content)) !== null) {
+                    if (match[1] && !dependencies.includes(match[1])) {
+                        dependencies.push(match[1]);
+                    }
+                }
+            }
+        }
+        else if (['.erl', '.hrl'].includes(ext)) {
+            // Erlang imports
+            const importRegex = /-(?:include|include_lib)\s*\(\s*"([^"]+)"\s*\)\./g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (['.tf', '.tfvars', '.hcl'].includes(ext)) {
+            // Terraform dependencies
+            const importRegex = /(?:module|provider|resource)\s+"([^"]+)"/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (fileName === 'Dockerfile' || ext === '.dockerfile') {
+            // Dockerfile FROM dependencies
+            const importRegex = /FROM\s+([\w\d.\/:-]+)/gi;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
+        else if (['.yml', '.yaml'].includes(ext) && (fileName.includes('docker-compose') || content.includes('apiVersion') || content.includes('kind'))) {
+            // Docker Compose or Kubernetes dependencies
+            // This is complex and would be better handled by a proper parser
+            // For now, just detect image references for Docker Compose
+            const importRegex = /image:\s+(.+)/g;
+            let match;
+            while ((match = importRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1])) {
+                    dependencies.push(match[1].trim().replace(/['"]*/g, ''));
+                }
+            }
+        }
+        else if (['.sql', '.mysql', '.pgsql', '.sqlite'].includes(ext)) {
+            // SQL dependencies - look for references to other tables
+            const tableRegex = /(?:FROM|JOIN)\s+([\w\d_]+)/gi;
+            let match;
+            while ((match = tableRegex.exec(content)) !== null) {
+                if (match[1] && !dependencies.includes(match[1]) &&
+                    !['WHERE', 'SELECT', 'GROUP', 'ORDER', 'HAVING', 'LIMIT'].includes(match[1].toUpperCase())) {
+                    dependencies.push(match[1]);
+                }
+            }
+        }
         return dependencies;
     }
     /**
@@ -595,8 +851,14 @@ Project Directory: ${workspacePath}
                     output += this.stripMarkdown(content);
                 }
                 else {
-                    output += "```" + path.extname(filepath).substring(1) + "\n" + content + "\n```\n";
+                    // Get the appropriate language for syntax highlighting
+                    const language = this.getHighlightLanguage(filepath);
+                    output += "```" + language + "\n" + content + "\n```\n";
                 }
+                // Analyze file for code information
+                this.analyzeFileSymbols(content, filepath);
+                // Store the content for LLM-optimized output
+                this.processedContent += output;
                 // Write in a single operation rather than line by line
                 await this.writeBlockToOutput(output, maxOutputFileSizeBytes);
             }
@@ -770,6 +1032,117 @@ Estimated tokens: ${approxTokens}${durationStr}
         catch (err) {
             console.error('Error in writeBlockToOutput:', err);
         }
+    }
+    /**
+     * Analyze and extract symbols from the file
+     */
+    analyzeFileSymbols(content, filepath) {
+        // Extract imports for file relationships
+        const imports = this.detectDependencies(content, filepath);
+        // Extract file extension and map to a language identifier
+        const language = this.getHighlightLanguage(filepath);
+        // Add to file map
+        this.fileMap.set(filepath, {
+            path: filepath,
+            size: content.length,
+            language: language,
+            imports: imports,
+            symbols: []
+        });
+    }
+    /**
+     * Maps a file extension to the appropriate syntax highlighting language
+     * @param filepath The path to the file
+     * @returns The language identifier for syntax highlighting
+     */
+    getHighlightLanguage(filepath) {
+        const filename = path.basename(filepath).toLowerCase();
+        const ext = path.extname(filepath).toLowerCase();
+        // Special cases for files without extensions or with specific names
+        if (filename === 'dockerfile' || filename.endsWith('.dockerfile')) {
+            return 'dockerfile';
+        }
+        if (filename === 'makefile') {
+            return 'makefile';
+        }
+        if (filename === 'docker-compose.yml' || filename === 'docker-compose.yaml') {
+            return 'yaml';
+        }
+        if ((filename.includes('kubernetes') || filename.includes('k8s')) && (ext === '.yml' || ext === '.yaml')) {
+            return 'yaml';
+        }
+        // Map extensions to languages
+        const extensionMap = {
+            // C-family languages
+            '.c': 'c', '.h': 'c',
+            '.cpp': 'cpp', '.cxx': 'cpp', '.cc': 'cpp', '.hpp': 'cpp', '.hxx': 'cpp',
+            '.cs': 'csharp',
+            '.java': 'java',
+            // System languages
+            '.go': 'go',
+            '.rs': 'rust',
+            '.swift': 'swift',
+            '.kt': 'kotlin', '.kts': 'kotlin',
+            '.scala': 'scala',
+            // Microsoft & .NET
+            '.vb': 'vb', '.vbs': 'vb',
+            '.fs': 'fsharp', '.fsx': 'fsharp', '.fsi': 'fsharp',
+            '.ps1': 'powershell', '.psm1': 'powershell', '.psd1': 'powershell',
+            // Mobile
+            '.m': 'objectivec', '.mm': 'objectivec',
+            '.dart': 'dart',
+            // Scripting languages
+            '.js': 'javascript', '.mjs': 'javascript', '.cjs': 'javascript',
+            '.ts': 'typescript', '.tsx': 'typescript', '.cts': 'typescript', '.mts': 'typescript',
+            '.jsx': 'jsx',
+            '.py': 'python', '.pyi': 'python', '.pyw': 'python',
+            '.rb': 'ruby', '.rbw': 'ruby',
+            '.php': 'php', '.phtml': 'php', '.php3': 'php', '.php4': 'php',
+            '.pl': 'perl', '.pm': 'perl',
+            '.sh': 'bash', '.bash': 'bash', '.zsh': 'bash', '.fish': 'bash',
+            '.r': 'r', '.rmd': 'r',
+            '.lua': 'lua',
+            // Functional languages
+            '.ex': 'elixir', '.exs': 'elixir',
+            '.erl': 'erlang', '.hrl': 'erlang',
+            // Web
+            '.html': 'html', '.htm': 'html', '.xhtml': 'html',
+            '.css': 'css',
+            '.scss': 'scss', '.sass': 'scss',
+            '.less': 'less',
+            '.svg': 'svg',
+            '.vue': 'vue',
+            '.svelte': 'svelte',
+            '.astro': 'astro',
+            // Data formats
+            '.json': 'json', '.jsonc': 'jsonc', '.json5': 'json5',
+            '.xml': 'xml', '.xsd': 'xml', '.dtd': 'xml',
+            '.yaml': 'yaml', '.yml': 'yaml',
+            '.toml': 'toml',
+            '.ini': 'ini',
+            '.properties': 'properties',
+            '.sql': 'sql', '.mysql': 'sql', '.pgsql': 'sql', '.sqlite': 'sql',
+            '.graphql': 'graphql', '.gql': 'graphql',
+            '.csv': 'csv', '.tsv': 'csv',
+            // Infrastructure
+            '.tf': 'terraform', '.tfvars': 'terraform', '.hcl': 'hcl',
+            '.nix': 'nix',
+            '.bicep': 'bicep',
+            // Documentation
+            '.md': 'markdown', '.markdown': 'markdown',
+            '.rst': 'rst',
+            '.adoc': 'asciidoc',
+            '.tex': 'latex', '.latex': 'latex',
+            // Other
+            '.asm': 'asm', '.s': 'asm',
+            '.proto': 'protobuf',
+            '.thrift': 'thrift',
+        };
+        if (ext in extensionMap) {
+            return extensionMap[ext];
+        }
+        // Default to the extension without the dot, or 'text' if no extension
+        return ext ? ext.substring(1) : 'text';
     }
 }
 exports.CodeFlattener = CodeFlattener;

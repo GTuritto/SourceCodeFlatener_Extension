@@ -1,10 +1,10 @@
 # Source Code Flattener VSCode Extension
 
-[![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![Version](https://img.shields.io/badge/version-1.5.0-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener)
 
-> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)**
+> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.5.0.vsix)**
 >
 > One-click download and install! See [installation instructions](#direct-download-easiest-method).
 
@@ -13,7 +13,7 @@ This extension flattens source code files in a project into a single or multiple
 ## Features
 
 - Flattens source code from your workspace into a single markdown file (or multiple if size exceeds limits)
-- **NEW: Automatically detects and documents code dependencies and imports**
+- **EXPANDED: Now supports dependency detection for 20+ languages (see [Dependency Documentation](#dependency-documentation))**
 - Automatically creates a `CodeFlattened` folder (configurable) in your project root
 - Provides a directory structure overview and comprehensive file listing
 - Includes full source code content of each file with proper formatting
@@ -29,7 +29,7 @@ This extension flattens source code files in a project into a single or multiple
 
 ### Direct Download (Easiest Method)
 
-1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.1.0.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.1.0.vsix)
+1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.5.0.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.5.0.vsix)
 
 2. Install it in VS Code:
    - Open VS Code
@@ -41,7 +41,7 @@ This extension flattens source code files in a project into a single or multiple
 Or use this command after downloading:
 
 ```bash
-code --install-extension source-code-flattener-1.1.0.vsix
+code --install-extension source-code-flattener-1.5.0.vsix
 ```
 
 ### Quick Install from GitHub
@@ -122,19 +122,39 @@ The extension automatically detects and documents dependencies between files. Fo
 
 Supported languages and import types:
 
-- **JavaScript/TypeScript**: ES6 imports, CommonJS requires, dynamic imports
-- **Python**: import statements and from-import statements
-- **Java**: package imports
-- **C#**: using directives
-- **C/C++**: #include statements
-- **Go**: import statements (both single and block imports)
-- **PHP**: require/include statements and use declarations
-- **Ruby**: require and load statements
-- **Rust**: use and extern crate statements
-- **HTML**: script, link, and img references
-- **CSS/SCSS/LESS**: @import and url() references
+- **JavaScript/TypeScript**: ES6 imports, CommonJS requires, dynamic imports (.js, .jsx, .ts, .tsx, .mjs, .cjs, .mts, .cts)
+- **Python**: import statements and from-import statements (.py, .pyi, .pyw)
+- **Java**: package imports (.java)
+- **C#**: using directives (.cs)
+- **C/C++**: #include statements (.cpp, .hpp, .c, .h, .cxx, .cc, .hxx)
+- **Go**: import statements (both single and block imports) (.go)
+- **PHP**: require/include statements and use declarations (.php, .phtml, .php3, .php4)
+- **Ruby**: require and load statements (.rb, .rbw)
+- **Rust**: use and extern crate statements (.rs)
+- **Swift**: import statements (.swift)
+- **Kotlin**: import statements with optional alias (.kt, .kts)
+- **Dart**: import and part statements (.dart)
+- **Elixir**: alias, import, and require statements (.ex, .exs)
+- **Erlang**: -include and -include_lib directives (.erl, .hrl)
+- **Terraform**: module, provider, and resource declarations (.tf, .tfvars, .hcl)
+- **Docker**: FROM statements in Dockerfiles
+- **Kubernetes/Docker Compose**: image references in YAML files
+- **SQL**: table references from FROM and JOIN clauses (.sql, .mysql, .pgsql, .sqlite)
+- **HTML**: script, link, and img references (.html, .htm)
+- **CSS/SCSS/LESS**: @import and url() references (.css, .scss, .less)
 
 This feature makes it easier for AI models to understand the relationships between files in your codebase, improving context-aware code generation and understanding.
+
+## Syntax Highlighting
+
+The extension now provides comprehensive syntax highlighting support for all supported languages, making your flattened code more readable:
+
+- Each code block in the generated markdown file is tagged with the appropriate language identifier
+- Syntax highlighting works automatically in VS Code and other markdown viewers that support code blocks
+- All file types are mapped to their correct language for highlighting purposes
+- Enhanced readability helps both human readers and AI models understand the code structure
+
+The color-coded syntax highlighting makes it much easier to scan through large codebases and helps AI tools better understand the structure and syntax of different programming languages.
 
 ## Performance Optimizations
 
@@ -151,7 +171,7 @@ This extension is optimized for performance and reliability:
 
 The extension supports a wide range of file types including:
 
-- **Code Files**: `.js`, `.ts`, `.py`, `.java`, `.c`, `.cpp`, `.cs`, `.go`, `.rb`, `.php`, etc.
+- **Code Files**: `.js`, `.ts`, `.py`, `.java`, `.c`, `.cpp`, `.cs`, `.go`, `.rb`, `.php`, `.rs`, `.swift`, `.kt`, `.dart`, `.ex`, `.erl`, `.tf`, etc.
 - **Web Files**: `.html`, `.css`, `.scss`, `.less`, `.svg`, etc.
 - **Config Files**: `.json`, `.xml`, `.yaml`, `.yml`, `.toml`, `.ini`, etc.
 - **Documentation**: `.md`, `.txt`, `.rst`, etc.
