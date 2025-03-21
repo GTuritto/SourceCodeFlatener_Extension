@@ -4,6 +4,10 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener)
 
+## 🎉 Now Available on the VS Code Marketplace
+
+This extension is now available on the [Visual Studio Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener). Install it directly from within VS Code for the easiest experience!
+
 > **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-latest.vsix)**
 >
 > One-click download and install! See [installation instructions](#direct-download-easiest-method).
@@ -54,12 +58,14 @@ npm install && \
 code --install-extension .
 ```
 
-### From VS Code Marketplace
+### From VS Code Marketplace (Recommended)
 
 1. Open VS Code
 2. Go to Extensions (Ctrl+Shift+X or Cmd+Shift+X on macOS)
 3. Search for "Source Code Flattener"
 4. Click Install
+
+This is the easiest method and ensures you'll receive automatic updates when new versions are released.
 
 ### Manual Installation from GitHub
 
