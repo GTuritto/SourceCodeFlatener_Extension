@@ -1,10 +1,10 @@
-# Source Code Flattener
+# CodeFlattener
 
 ## **Unlock the Full Potential of Your Codebase with One Click**
 
 ### **A Practical Solution for AI-Assisted Development, Code Reviews, and Project Sharing**
 
-Source Code Flattener transforms your multi-file project into a structured, dependency-aware markdown document. It aims to solve common challenges with limited context in AI assistants and disjointed code reviews by delivering your codebase as a single, organized document that preserves relationships between files.
+CodeFlattener transforms your multi-file project into a structured, dependency-aware markdown document. It aims to solve common challenges with limited context in AI assistants and disjointed code reviews by delivering your codebase as a single, organized document that preserves relationships between files.
 
 Designed to provide AI assistants with more complete context, simplify code reviews, and enable project sharing without the overhead of setup requirements.
 
@@ -31,13 +31,13 @@ Designed to provide AI assistants with more complete context, simplify code revi
 - Parallel file processing for improved performance on large codebases
 - Robust error handling that continues processing despite individual file failures
 
-## How to Use Source Code Flattener
+## How to Use CodeFlattener
 
 ### Quick Start
 
 1. Open your project folder in VSCode
 2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the command palette
-3. Type "Flatten Source Code" and select the command
+3. Type "Flatten Code" and select the command
 4. Wait while the extension processes your files (a progress indicator will be shown)
 5. Once complete, a notification will appear with the location of your flattened code
 6. Open the `CodeFlattened` folder (or your custom output folder) to view the generated markdown files
@@ -55,7 +55,7 @@ Designed to provide AI assistants with more complete context, simplify code revi
 ### Customizing the Output
 
 1. Go to VS Code Settings (`Ctrl+,` or `Cmd+,`)
-2. Search for "Source Code Flattener"
+2. Search for "CodeFlattener"
 3. Modify any of the following settings:
    - Change the output folder name
    - Exclude specific file patterns (e.g., test files, temporary files)
@@ -74,11 +74,11 @@ Designed to provide AI assistants with more complete context, simplify code revi
 
 This extension contributes the following settings:
 
-- **sourceCodeFlattener.outputFolder**: Name of the folder where flattened source code will be saved (default: "CodeFlattened")
-- **sourceCodeFlattener.excludePatterns**: Patterns to exclude from processing in glob format (default: bin/*, obj/*, node_modules/**, etc.)
-- **sourceCodeFlattener.includePatterns**: Patterns to include in processing in glob format (if empty, all files are processed except excluded ones)
-- **sourceCodeFlattener.maxFileSizeBytes**: Maximum file size in bytes for analysis (default: 10MB)
-- **sourceCodeFlattener.maxOutputFileSizeBytes**: Maximum output file size in bytes before rotation (default: 5MB)
+- **codeFlattener.outputFolder**: Name of the folder where flattened source code will be saved (default: "CodeFlattened")
+- **codeFlattener.excludePatterns**: Patterns to exclude from processing in glob format (default: bin/*, obj/*, node_modules/**, etc.)
+- **codeFlattener.includePatterns**: Patterns to include in processing in glob format (if empty, all files are processed except excluded ones)
+- **codeFlattener.maxFileSizeBytes**: Maximum file size in bytes for analysis (default: 10MB)
+- **codeFlattener.maxOutputFileSizeBytes**: Maximum output file size in bytes before rotation (default: 5MB)
 
 ## Troubleshooting
 
@@ -96,8 +96,8 @@ This extension contributes the following settings:
 
 If you encounter issues not covered here:
 
-1. Check the [GitHub Issues](https://github.com/GTuritto/SourceCodeFlatener_Extension/issues) to see if it's a known problem
-2. Submit a new issue with details about your environment and the specific error
+1. Submit your feature requests and bug reports through our [Canny feedback board](https://codeflattener.canny.io/)
+2. For other inquiries, you may contact [giuseppe@turitto.net](mailto:giuseppe@turitto.net) with questions, but please note that support availability is limited
 
 ## How It Works
 
@@ -176,7 +176,7 @@ The extension supports a wide range of file types including:
 
 Binary files and media files are automatically excluded from processing.
 
-## How Source Code Flattener Can Help You
+## How CodeFlattener Can Help You
 
 - **Enhance AI Coding Assistants**: Feed your codebase to AI tools like ChatGPT, Claude, or GitHub Copilot with better context preservation. This can help them generate more relevant suggestions and solutions based on understanding your project structure.
 
@@ -201,6 +201,6 @@ Based on user testing and feedback, we're working on:
 3. **Optimized File Size**: Improving compression and formatting for smaller, more readable output
 4. **Enhanced Readability**: Refining the output format for better navigation and comprehension
 
-**⭐ If you find this extension helpful, please consider [leaving a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener&ssr=false#review-details) and starring our [GitHub Repository](https://github.com/GTuritto/SourceCodeFlatener_Extension)! ⭐**
+**⭐ If you find this extension helpful, please consider [leaving a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)! ⭐**
 
-**[GitHub Repository](https://github.com/GTuritto/SourceCodeFlatener_Extension) | [Report Issues](https://github.com/GTuritto/SourceCodeFlatener_Extension/issues) | [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener&ssr=false#review-details)**
+**[Submit Feedback](https://codeflattener.canny.io/) | [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details) | Contact: [giuseppe@turitto.net](mailto:giuseppe@turitto.net) (limited support)**

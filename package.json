@@ -1,6 +1,6 @@
 {
-  "name": "source-code-flattener",
-  "displayName": "Source Code Flattener",
+  "name": "code-flattener",
+  "displayName": "CodeFlattener",
   "version": "1.5.1",
   "description": "Transform your codebase into a perfectly structured markdown document - Boost AI coding assistants with full context, simplify code reviews, and share your projects effortlessly",
   "publisher": "GiuseppeTuritto",
@@ -28,19 +28,19 @@
   "contributes": {
     "commands": [
       {
-        "command": "source-code-flattener.flattenCode",
-        "title": "Flatten Source Code"
+        "command": "code-flattener.flattenCode",
+        "title": "Flatten Code"
       }
     ],
     "configuration": {
-      "title": "Source Code Flattener",
+      "title": "CodeFlattener",
       "properties": {
-        "sourceCodeFlattener.outputFolder": {
+        "codeFlattener.outputFolder": {
           "type": "string",
           "default": "CodeFlattened",
           "description": "Name of the folder where flattened source code will be saved"
         },
-        "sourceCodeFlattener.excludePatterns": {
+        "codeFlattener.excludePatterns": {
           "type": "array",
           "default": [
             "bin/**",
@@ -53,17 +53,17 @@
           ],
           "description": "Patterns to exclude from processing (glob format)"
         },
-        "sourceCodeFlattener.includePatterns": {
+        "codeFlattener.includePatterns": {
           "type": "array",
           "default": [],
           "description": "Patterns to include in processing (glob format). If empty, all files will be processed except those matching exclude patterns"
         },
-        "sourceCodeFlattener.maxFileSizeBytes": {
+        "codeFlattener.maxFileSizeBytes": {
           "type": "number",
           "default": 10485760,
           "description": "Maximum file size in bytes for analysis (default: 10MB)"
         },
-        "sourceCodeFlattener.maxOutputFileSizeBytes": {
+        "codeFlattener.maxOutputFileSizeBytes": {
           "type": "number",
           "default": 5242880,
           "description": "Maximum output file size in bytes before rotation (default: 5MB)"

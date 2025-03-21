@@ -48,7 +48,7 @@ const globPromise = (0, util_1.promisify)(glob.glob);
 const KB = 1024;
 const MB = 1024 * KB;
 /**
- * CodeFlattener class that processes source code files and generates
+ * CodeFlattener class that processes code files and generates
  * a single flattened file with code and LLM-optimized metadata
  */
 class CodeFlattener {
@@ -227,14 +227,14 @@ Project Directory: ${workspacePath}
                 const content = await readFile(firstOutputFilePath, 'utf8');
                 // Prepend summary and TOC
                 await writeFile(firstOutputFilePath, summary + tableOfContents + content);
-                progressCallback(`Successfully created flattened source code file`, 0.98);
+                progressCallback(`Successfully created flattened code file`, 0.98);
             }
             catch (readErr) {
                 console.error('Error updating summary in output file:', readErr);
                 // Try to write the summary on its own if we can't read the original file
                 await writeFile(firstOutputFilePath, summary);
             }
-            progressCallback(`Completed flattening source code`, 1.0);
+            progressCallback(`Completed flattening code`, 1.0);
             // No additional artifacts needed as we've generated the comprehensive file
         }
         catch (err) {

@@ -1,17 +1,14 @@
-# Source Code Flattener Extension Releases
+# CodeFlattener Extension Releases
 
-This folder contains all released versions of the Source Code Flattener extension for Visual Studio Code.
+This folder contains all released versions of the CodeFlattener extension for Visual Studio Code.
 
 ## Available Versions
 
-- [Version 1.5.1](./source-code-flattener-1.5.1.vsix) - Latest release with consolidated output and dependency diagrams (March 21, 2025)
-- [Version 1.5.0](./source-code-flattener-1.5.0.vsix) - Expanded language support (March 21, 2025)
-- [Version 1.1.0](./source-code-flattener-1.1.0.vsix) - Added dependency detection (March 20, 2025)
-- [Version 1.0.1](./source-code-flattener-1.0.1.vsix) - Initial release (March 20, 2025)
+- [Version 1.5.1](./code-flattener-1.5.1.vsix) - Latest release with consolidated output and dependency diagrams (March 21, 2025)
 
 ## Latest Version
 
-A symbolic link [`source-code-flattener-latest.vsix`](./source-code-flattener-latest.vsix) always points to the most recent version of the extension. This allows download links to remain consistent even as new versions are released.
+A symbolic link [`code-flattener-latest.vsix`](./code-flattener-latest.vsix) always points to the most recent version of the extension. This allows download links to remain consistent even as new versions are released.
 
 ## Installation
 

@@ -5,12 +5,12 @@ import * as glob from 'glob';
 import { CodeFlattener } from './codeFlattener';
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('Source Code Flattener extension is now active');
+    console.log('CodeFlattener extension is now active');
 
     const flattener = new CodeFlattener();
 
     // Register the flatten code command
-    const disposable = vscode.commands.registerCommand('source-code-flattener.flattenCode', async () => {
+    const disposable = vscode.commands.registerCommand('code-flattener.flattenCode', async () => {
         try {
             // Get workspace folder
             if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
@@ -21,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
             const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
             
             // Get configuration
-            const config = vscode.workspace.getConfiguration('sourceCodeFlattener');
+            const config = vscode.workspace.getConfiguration('codeFlattener');
             const outputFolderName = config.get<string>('outputFolder', 'CodeFlattened');
             const excludePatterns = config.get<string[]>('excludePatterns', ['bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened/**']);
             const includePatterns = config.get<string[]>('includePatterns', []);
@@ -40,7 +40,7 @@ export function activate(context: vscode.ExtensionContext) {
             // Create progress notification
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: "Flattening Source Code",
+                title: "Flattening Code",
                 cancellable: true
             }, async (progress, token) => {
                 token.onCancellationRequested(() => {
@@ -60,9 +60,9 @@ export function activate(context: vscode.ExtensionContext) {
                         (message: string, increment: number) => progress.report({ increment, message })
                     );
 
-                    vscode.window.showInformationMessage('Source code has been flattened successfully!');
+                    vscode.window.showInformationMessage('Code has been flattened successfully!');
                 } catch (err: any) {
-                    vscode.window.showErrorMessage(`Error flattening source code: ${err.message}`);
+                    vscode.window.showErrorMessage(`Error flattening code: ${err.message}`);
                 }
             });
         } catch (err: any) {

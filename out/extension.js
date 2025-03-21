@@ -39,10 +39,10 @@ const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
 const codeFlattener_1 = require("./codeFlattener");
 function activate(context) {
-    console.log('Source Code Flattener extension is now active');
+    console.log('CodeFlattener extension is now active');
     const flattener = new codeFlattener_1.CodeFlattener();
     // Register the flatten code command
-    const disposable = vscode.commands.registerCommand('source-code-flattener.flattenCode', async () => {
+    const disposable = vscode.commands.registerCommand('code-flattener.flattenCode', async () => {
         try {
             // Get workspace folder
             if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
@@ -51,7 +51,7 @@ function activate(context) {
             }
             const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
             // Get configuration
-            const config = vscode.workspace.getConfiguration('sourceCodeFlattener');
+            const config = vscode.workspace.getConfiguration('codeFlattener');
             const outputFolderName = config.get('outputFolder', 'CodeFlattened');
             const excludePatterns = config.get('excludePatterns', ['bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened/**']);
             const includePatterns = config.get('includePatterns', []);
@@ -67,7 +67,7 @@ function activate(context) {
             // Create progress notification
             await vscode.window.withProgress({
                 location: vscode.ProgressLocation.Notification,
-                title: "Flattening Source Code",
+                title: "Flattening Code",
                 cancellable: true
             }, async (progress, token) => {
                 token.onCancellationRequested(() => {
@@ -76,10 +76,10 @@ function activate(context) {
                 progress.report({ increment: 0, message: "Starting..." });
                 try {
                     await flattener.flattenWorkspace(workspaceFolder, outputFolder, includePatterns, excludePatterns, maxFileSizeBytes, maxOutputFileSizeBytes, (message, increment) => progress.report({ increment, message }));
-                    vscode.window.showInformationMessage('Source code has been flattened successfully!');
+                    vscode.window.showInformationMessage('Code has been flattened successfully!');
                 }
                 catch (err) {
-                    vscode.window.showErrorMessage(`Error flattening source code: ${err.message}`);
+                    vscode.window.showErrorMessage(`Error flattening code: ${err.message}`);
                 }
             });
         }
