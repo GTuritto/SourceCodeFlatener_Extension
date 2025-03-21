@@ -89,8 +89,8 @@ This extension contributes the following settings:
 - **Missing important files**: Check your include/exclude patterns to ensure necessary files aren't being filtered out
 - **Memory usage concerns**: If processing a very large codebase, increase the `maxFileSizeBytes` setting to skip extremely large files
 - **Output file not created**: Ensure your project has writable permissions for the output folder
-- **Multiple files created**: Currently, the extension generates separate files for flattened code and analysis. We're working on consolidating these into a single, optimized file
-- **Dependency visualization**: We're implementing Mermaid diagram support for better dependency visualization in upcoming versions
+- **Advanced features**: The extension now generates a single consolidated file that includes both flattened code and dependency analysis
+- **Dependency visualization**: Mermaid diagrams are included at the end of the output file for clear visualization of file dependencies
 
 ### Getting Help
 
