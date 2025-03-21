@@ -4,8 +4,6 @@
 
 Source Code Flattener makes it easy to consolidate your project's code into a well-organized, easy-to-read markdown file. Whether you're preparing your code for AI assistants, LLMs, or conducting code reviews, this extension streamlines the process.
 
-![Example of flattened code](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/images/preview.png)
-
 ## Key Features
 
 ### 🔍 Comprehensive Language Support (v1.5.0)
