@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.source-code-flattener)
 
-> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.5.0.vsix)**
+> **⬇️ [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-latest.vsix)**
 >
 > One-click download and install! See [installation instructions](#direct-download-easiest-method).
 
@@ -29,7 +29,7 @@ This extension flattens source code files in a project into a single or multiple
 
 ### Direct Download (Easiest Method)
 
-1. Download the VSIX file from our GitHub repository: [Download source-code-flattener-1.5.0.vsix](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/source-code-flattener-1.5.0.vsix)
+1. Download the VSIX file from our GitHub repository: [Download Extension](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-latest.vsix)
 
 2. Install it in VS Code:
    - Open VS Code
@@ -41,7 +41,7 @@ This extension flattens source code files in a project into a single or multiple
 Or use this command after downloading:
 
 ```bash
-code --install-extension source-code-flattener-1.5.0.vsix
+code --install-extension source-code-flattener-latest.vsix
 ```
 
 ### Quick Install from GitHub
