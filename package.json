@@ -17,6 +17,9 @@
     "color": "#C80000",
     "theme": "dark"
   },
+  "markdown": "github",
+  "qna": "marketplace",
+  "marketplace": "MARKETPLACE.md",
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {
