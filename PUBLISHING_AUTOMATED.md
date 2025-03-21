@@ -43,6 +43,7 @@ When you create a new release on GitHub:
 5. Click "Publish release"
 
 The GitHub Actions workflow will automatically:
+
 - Build the extension
 - Publish it to the marketplace
 - Update the releases folder and symlinks
