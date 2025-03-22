@@ -100,6 +100,20 @@ This helps AI models understand file relationships in your codebase, improving c
 
 ## Troubleshooting
 
+### Command Not Found Error
+
+If you encounter an error that the command `code-flattner.flattenCode` is not found, please note the correct command ID is `code-flattener.flattenCode` (with an 'e' between 't' and 'n').
+
+The recommended way to use the extension is through the Command Palette:
+
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+2. Type "Flatten Code" (not the full command ID)
+3. Select the command from the dropdown
+
+If you're calling the command programmatically, make sure to use the correct ID: `code-flattener.flattenCode`
+
+### Other Common Issues
+
 - **Processing takes too long**: Try excluding non-essential directories using the exclude patterns
 - **Output file is too large**: Adjust the `maxOutputFileSizeBytes` setting
 - **Missing important files**: Check your include/exclude patterns
