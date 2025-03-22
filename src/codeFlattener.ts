@@ -1091,11 +1091,20 @@ Estimated tokens: ${approxTokens}${durationStr}
      * @param maxOutputFileSizeBytes Maximum file size before rotation
      */
     private async writeBlockToOutput(block: string, maxOutputFileSizeBytes: number): Promise<void> {
-        // Check current file size before writing
         try {
-            const stats = await stat(this.currentOutputFile);
-            const currentSize = stats.size;
             const blockSize = Buffer.byteLength(block, 'utf8');
+            let currentSize = 0;
+            
+            // Check if the file exists before trying to get its size
+            if (fs.existsSync(this.currentOutputFile)) {
+                const stats = await stat(this.currentOutputFile);
+                currentSize = stats.size;
+            } else {
+                // File doesn't exist yet, create with header
+                const header = `# Project Digest: ${this.projectName}\nGenerated on: ${new Date().toString()}\n\n`;
+                await writeFile(this.currentOutputFile, header);
+                currentSize = Buffer.byteLength(header, 'utf8');
+            }
             
             // If adding this block would exceed max size, rotate the file first
             if (currentSize + blockSize > maxOutputFileSizeBytes) {
@@ -1105,6 +1114,7 @@ Estimated tokens: ${approxTokens}${durationStr}
                     `${this.baseOutputFileName}_part${this.filePart}${this.outputFileExtension}`
                 );
                 
+                // Ensure the new file exists with a header
                 const header = `# Project Digest Continued: ${this.projectName}\nGenerated on: ${new Date().toString()}\n\n`;
                 await writeFile(this.currentOutputFile, header);
             }
@@ -1113,6 +1123,18 @@ Estimated tokens: ${approxTokens}${durationStr}
             await fs.promises.appendFile(this.currentOutputFile, block);
         } catch (err) {
             console.error('Error in writeBlockToOutput:', err);
+            // Create an error recovery path to ensure output continues
+            try {
+                // Ensure the output directory exists
+                if (!fs.existsSync(this.outputFileDirectory)) {
+                    await mkdir(this.outputFileDirectory, { recursive: true });
+                }
+                
+                // Try to create or append to the file directly
+                await fs.promises.appendFile(this.currentOutputFile, block);
+            } catch (recoveryErr) {
+                console.error('Failed to recover from error in writeBlockToOutput:', recoveryErr);
+            }
         }
     }
     /**
