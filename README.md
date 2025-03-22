@@ -115,7 +115,7 @@ Install directly from the [VS Code Marketplace](https://marketplace.visualstudio
 
 ### Direct Download from GitHub
 
-**[⬇️ Download Latest Release (v1.5.1)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-1.5.1.vsix)**
+**[⬇️ Download Latest Release (v1.5.2)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/code-flattener-1.5.2.vsix)**
 
 To install from VSIX:
 

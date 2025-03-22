@@ -4,7 +4,8 @@ This folder contains all released versions of the CodeFlattener extension for Vi
 
 ## Available Versions
 
-- [Version 1.5.1](./code-flattener-1.5.1.vsix) - Latest release with consolidated output and dependency diagrams (March 21, 2025)
+- [Version 1.5.2](./code-flattener-1.5.2.vsix) - Latest release with expanded compatibility for VSCode 1.74.0+ and cursor 0.47.8 (March 22, 2025)
+- [Version 1.5.1](./code-flattener-1.5.1.vsix) - Previous release with consolidated output and dependency diagrams (March 21, 2025)
 
 ## Latest Version
 
