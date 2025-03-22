@@ -23,7 +23,9 @@
   "extensionPack": [],
   "readme": "MARKETPLACE.md",
   "pricing": "Free",
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:code-flattener.flattenCode"
+  ],
   "main": "./out/extension.js",
   "contributes": {
     "commands": [
