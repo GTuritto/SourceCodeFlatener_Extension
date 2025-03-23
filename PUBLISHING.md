@@ -1,6 +1,6 @@
 # Publishing to VS Code Marketplace
 
-This document explains how to publish the Source Code Flattener extension to the VS Code marketplace.
+This document explains how to publish the CodeFlattener extension to the VS Code marketplace.
 
 ## Prerequisites
 
@@ -35,13 +35,13 @@ To publish a new version:
 If needed, you can unpublish the extension:
 
 ```bash
-vsce unpublish GTuritto.source-code-flattener
+vsce unpublish GiuseppeTuritto.code-flattener
 ```
 
 ## Marketplace Visibility
 
 After publishing, your extension will be available at:
-[https://marketplace.visualstudio.com/items?itemName=GTuritto.source-code-flattener](https://marketplace.visualstudio.com/items?itemName=GTuritto.source-code-flattener)
+[https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
 ## Testing the Extension Locally
 

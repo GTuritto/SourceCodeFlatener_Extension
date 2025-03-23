@@ -12,9 +12,6 @@ fi
 # Store the new version
 NEW_VERSION=$1
 
-# Update the VERSION file
-echo $NEW_VERSION > VERSION
-
 # Update package.json using jq if available, otherwise with sed
 if command -v jq &> /dev/null; then
     jq ".version = \"$NEW_VERSION\"" package.json > package.json.tmp && mv package.json.tmp package.json
@@ -24,30 +21,19 @@ fi
 
 # Update version in README.md
 sed -i "" "s/version-[0-9]*\.[0-9]*\.[0-9]*-blue/version-$NEW_VERSION-blue/g" README.md
-sed -i "" "s/source-code-flattener-[0-9]*\.[0-9]*\.[0-9]*\.vsix/source-code-flattener-$NEW_VERSION.vsix/g" README.md
+sed -i "" "s/code-flattener-[0-9]*\.[0-9]*\.[0-9]*\.vsix/code-flattener-$NEW_VERSION.vsix/g" README.md
+sed -i "" "s/(v[0-9]*\.[0-9]*\.[0-9]*)/(v$NEW_VERSION)/g" README.md
 
-# Update version in DOWNLOAD.md
-sed -i "" "s/(v[0-9]*\.[0-9]*\.[0-9]*)/(v$NEW_VERSION)/g" DOWNLOAD.md
-sed -i "" "s/source-code-flattener-[0-9]*\.[0-9]*\.[0-9]*\.vsix/source-code-flattener-$NEW_VERSION.vsix/g" DOWNLOAD.md
-sed -i "" "s/What's Included in v[0-9]*\.[0-9]*\.[0-9]*/What's Included in v$NEW_VERSION/g" DOWNLOAD.md
-
-# Update version in CHANGELOG.md
-# Add a new version header to the CHANGELOG.md
-TODAY=$(date +%Y-%m-%d)
-sed -i "" "4i\\
-\\
-## [$NEW_VERSION] - $TODAY\\
-\\
-### New Features\\
-\\
-- Add new features here\\
-\\
-### Improvements\\
-\\
-- Add improvements here\\
-\\
-" CHANGELOG.md
+# Add entry for new version in CHANGELOG.md if it doesn't exist already
+if ! grep -q "## \[$NEW_VERSION\]" CHANGELOG.md; then
+    CURRENT_DATE=$(date +"%Y-%m-%d")
+    sed -i "" "/All notable changes/a\\n## [$NEW_VERSION] - $CURRENT_DATE\n\n### Changes\n\n- Version update\n" CHANGELOG.md
+fi
+# The existing CHANGELOG.md update is sufficient
 
 echo "Version updated to $NEW_VERSION in all files."
-echo "Don't forget to build the new package with 'npx vsce package'"
-echo "And create a new Git tag with 'git tag -a v$NEW_VERSION -m \"Version $NEW_VERSION\"'"
+echo "Don't forget to:"
+echo "1. Build the new package: npx vsce package"
+echo "2. Copy VSIX to releases: cp *.vsix releases/code-flattener-$NEW_VERSION.vsix"
+echo "3. Create a Git tag: git tag -a v$NEW_VERSION -m 'Version $NEW_VERSION'"
+echo "4. Push changes: git push && git push --tags"

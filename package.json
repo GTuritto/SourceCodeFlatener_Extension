@@ -1,7 +1,7 @@
 {
   "name": "code-flattener",
   "displayName": "CodeFlattener",
-  "version": "1.5.1",
+  "version": "1.5.5",
   "description": "Transform your codebase into a perfectly structured markdown document - Boost AI coding assistants with full context, simplify code reviews, and share your projects effortlessly",
   "publisher": "GiuseppeTuritto",
   "engines": {

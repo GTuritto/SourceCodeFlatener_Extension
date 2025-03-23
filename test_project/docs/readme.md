@@ -1,6 +1,6 @@
 # Test Project
 
-This is a sample project for testing the Source Code Flattener extension.
+This is a sample project for testing the CodeFlattener extension.
 
 ## Features
 

@@ -1,6 +1,6 @@
 # CodeFlattener
 
-[![Version](https://img.shields.io/badge/version-1.5.1-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
@@ -115,7 +115,7 @@ Install directly from the [VS Code Marketplace](https://marketplace.visualstudio
 
 ### Direct Download from GitHub
 
-**[⬇️ Download Latest Release (v1.5.1)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/source-code-flattener-1.5.1.vsix)**
+**[⬇️ Download Latest Release (v1.5.5)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/code-flattener-1.5.5.vsix)**
 
 To install from VSIX:
 

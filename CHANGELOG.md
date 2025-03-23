@@ -1,6 +1,14 @@
 # Change Log
 
-All notable changes to the "Source Code Flattener" extension will be documented in this file.
+All notable changes to the "CodeFlattener" extension will be documented in this file.
+
+## [1.5.5] - 2025-03-23
+
+### Changes
+
+- Updated extension name to consistently use "CodeFlattener" across all files
+- Removed redundant VERSION file to maintain single source of truth in package.json
+- Various documentation improvements
 
 ## [1.5.1] - 2025-03-21
 
