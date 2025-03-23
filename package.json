@@ -9,10 +9,9 @@
   },
   "categories": [
     "Other",
-    "Programming Languages",
     "Formatters"
   ],
-  "icon": "images/Flattener.png",
+  "icon": "assets/icon/Flattener.png",
   "galleryBanner": {
     "color": "#C80000",
     "theme": "dark"
@@ -21,7 +20,7 @@
   "qna": "marketplace",
   "extensionDependencies": [],
   "extensionPack": [],
-  "readme": "MARKETPLACE.md",
+  "readme": "assets/marketplace/MARKETPLACE.md",
   "pricing": "Free",
   "activationEvents": [],
   "main": "./out/extension.js",
@@ -97,7 +96,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/GTuritto/SourceCodeFlatener_Extension.git"
+    "url": "https://github.com/GTuritto/CodeFlattener.git"
   },
   "devDependencies": {
     "@types/glob": "^8.1.0",

@@ -4,8 +4,14 @@ This directory contains documentation for the CodeFlattener extension.
 
 ## Contents
 
-- [Development Guide](./DEVELOPMENT.md) - Information for developers contributing to the extension
-- [Publishing Guide](./PUBLISHING.md) - Instructions for publishing the extension to the VS Code Marketplace
+### Project Documentation
+
+Documentation related to the project itself is stored in the `project` directory:
+
+- [Contributing Guide](./project/CONTRIBUTING.md) - Guidelines for contributing to the project
+- [Changelog](./project/CHANGELOG.md) - Version history and release notes
+
+The Marketplace description is stored in `assets/marketplace/MARKETPLACE.md` as it relates to the VS Code Marketplace presentation.
 
 ## Extension Features
 

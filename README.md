@@ -1,7 +1,7 @@
 # CodeFlattener
 
-[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/GTuritto/CodeFlattener/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/CodeFlattener/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
 ## **Unlock the Full Potential of Your Codebase with One Click**
@@ -115,7 +115,7 @@ Install directly from the [VS Code Marketplace](https://marketplace.visualstudio
 
 ### Direct Download from GitHub
 
-**[⬇️ Download Latest Release (v1.5.5)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/code-flattener-1.5.5.vsix)**
+**[⬇️ Download Latest Release (v1.5.5)](https://github.com/GTuritto/CodeFlattener/raw/main/releases/code-flattener-1.5.5.vsix)**
 
 To install from VSIX:
 
@@ -131,7 +131,7 @@ To install from VSIX:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git
+   git clone https://github.com/GTuritto/CodeFlattener.git
    ```
 
 2. Install dependencies:
@@ -151,4 +151,4 @@ To install from VSIX:
 
 **⭐ If you find this extension helpful, please consider [leaving a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)! ⭐**
 
-**[Submit Feedback](https://codeflattener.canny.io/) | [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details) | [GitHub Repository](https://github.com/GTuritto/SourceCodeFlatener_Extension) | Contact: [giuseppe@turitto.net](mailto:giuseppe@turitto.net) (limited support)**
+**[Submit Feedback](https://codeflattener.canny.io/) | [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details) | [GitHub Repository](https://github.com/GTuritto/CodeFlattener) | Contact: [giuseppe@turitto.net](mailto:giuseppe@turitto.net) (limited support)**
