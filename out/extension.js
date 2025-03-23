@@ -53,21 +53,23 @@ function activate(context) {
             // Get configuration
             const config = vscode.workspace.getConfiguration('codeFlattener');
             const outputFolderName = config.get('outputFolder', 'CodeFlattened_Output');
-            const excludePatterns = config.get('excludePatterns', [
+            const maxFileSizeBytes = config.get('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
+            const maxOutputFileSizeBytes = config.get('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
+            const prioritizeImportantFiles = config.get('prioritizeImportantFiles', true);
+            const addCodeRelationshipDiagrams = config.get('addCodeRelationshipDiagrams', true);
+            // Default exclude patterns for security and performance
+            const excludePatterns = [
                 'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
                 // Always exclude .env files which typically contain secrets
                 '.env', '.env.*', '**/.env', '**/.env.*'
-            ]);
-            const includePatterns = config.get('includePatterns', []);
-            const maxFileSizeBytes = config.get('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
-            const maxOutputFileSizeBytes = config.get('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
-            // LLM optimization configuration
-            const respectGitignore = config.get('respectGitignore', true);
-            const enableSemanticCompression = config.get('enableSemanticCompression', true);
-            const enhancedTableOfContents = config.get('enhancedTableOfContents', true);
-            const prioritizeImportantFiles = config.get('prioritizeImportantFiles', true);
-            // Force visualization level to basic for optimal performance
-            const visualizationLevel = 'basic'; // Always use basic regardless of user setting
+            ];
+            const includePatterns = [];
+            // Always use gitignore and simplify the settings
+            const respectGitignore = true;
+            const enableSemanticCompression = false;
+            const enhancedTableOfContents = true;
+            // Use visualization based on the addCodeRelationshipDiagrams setting
+            const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';
             // If file is selected, include its path specifically
             const stats = await vscode.workspace.fs.stat(fileUri);
             if (stats.type === vscode.FileType.File) {
@@ -118,39 +120,38 @@ function activate(context) {
             const workspaceFolder = vscode.workspace.workspaceFolders[0].uri.fsPath;
             // Get configuration
             const config = vscode.workspace.getConfiguration('codeFlattener');
-            const outputFolderName = config.get('outputFolder', 'CodeFlattened');
-            const excludePatterns = config.get('excludePatterns', [
-                'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened/**',
-                // Always exclude .env files which typically contain secrets
-                '.env', '.env.*', '**/.env', '**/.env.*'
-            ]);
-            const includePatterns = config.get('includePatterns', []);
+            const outputFolderName = config.get('outputFolder', 'CodeFlattened_Output');
             const maxFileSizeBytes = config.get('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
             const maxOutputFileSizeBytes = config.get('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
-            // LLM optimization configuration
-            const respectGitignore = config.get('respectGitignore', true);
-            const enableSemanticCompression = config.get('enableSemanticCompression', true);
-            const enhancedTableOfContents = config.get('enhancedTableOfContents', true);
             const prioritizeImportantFiles = config.get('prioritizeImportantFiles', true);
-            // Force visualization level to basic for optimal performance
-            const visualizationLevel = 'basic'; // Always use basic regardless of user setting
-            // Ask the user if they want to specify any additional files to exclude
-            const shouldAskForExclusions = config.get('promptForAdditionalExclusions', true);
-            if (shouldAskForExclusions) {
-                const additionalExcludesInput = await vscode.window.showInputBox({
-                    prompt: 'Enter additional files/patterns to exclude (comma-separated, leave empty for none)',
-                    placeHolder: 'e.g., secrets.json, **/*.log, test/fixtures/**'
-                });
-                if (additionalExcludesInput) {
-                    // Split by commas and trim each pattern
-                    const additionalExcludes = additionalExcludesInput
-                        .split(',')
-                        .map(pattern => pattern.trim())
-                        .filter(pattern => pattern.length > 0);
-                    if (additionalExcludes.length > 0) {
-                        excludePatterns.push(...additionalExcludes);
-                        console.log(`Added ${additionalExcludes.length} additional exclusion patterns from user input`);
-                    }
+            const addCodeRelationshipDiagrams = config.get('addCodeRelationshipDiagrams', true);
+            // Default exclude patterns for security and performance
+            const excludePatterns = [
+                'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
+                // Always exclude .env files which typically contain secrets
+                '.env', '.env.*', '**/.env', '**/.env.*'
+            ];
+            const includePatterns = [];
+            // Always use gitignore and simplify the settings
+            const respectGitignore = true;
+            const enableSemanticCompression = false;
+            const enhancedTableOfContents = true;
+            // Use visualization based on the addCodeRelationshipDiagrams setting
+            const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';
+            // Always ask the user if they want to specify any additional files to exclude
+            const additionalExcludesInput = await vscode.window.showInputBox({
+                prompt: 'Enter additional files/patterns to exclude (comma-separated, leave empty for none)',
+                placeHolder: 'e.g., secrets.json, **/*.log, test/fixtures/**'
+            });
+            if (additionalExcludesInput) {
+                // Split by commas and trim each pattern
+                const additionalExcludes = additionalExcludesInput
+                    .split(',')
+                    .map(pattern => pattern.trim())
+                    .filter(pattern => pattern.length > 0);
+                if (additionalExcludes.length > 0) {
+                    excludePatterns.push(...additionalExcludes);
+                    console.log(`Added ${additionalExcludes.length} additional exclusion patterns from user input`);
                 }
             }
             // Always add the output folder to excludes to avoid processing it

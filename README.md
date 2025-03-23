@@ -54,11 +54,11 @@ To install from VSIX:
 
 In VS Code Settings (`Ctrl+,` or `Cmd+,`), search for "Code Flattener" to configure:
 
-- **`code-flattener.outputFolder`**: Name of the folder where flattened code will be saved (default: "CodeFlattened")
-- **`code-flattener.excludePatterns`**: Patterns to exclude from processing in glob format
-- **`code-flattener.includePatterns`**: Patterns to include in processing in glob format
-- **`code-flattener.maxFileSizeBytes`**: Maximum file size in bytes for analysis (default: 10MB)
-- **`code-flattener.maxOutputFileSizeBytes`**: Maximum output file size before rotation (default: 5MB)
+- **`codeFlattener.outputFolder`**: Name of the folder where flattened code will be saved (default: "CodeFlattened_Output")
+- **`codeFlattener.maxFileSizeBytes`**: Maximum file size in bytes for analysis (default: 10MB)
+- **`codeFlattener.maxOutputFileSizeBytes`**: Maximum output file size before rotation (default: 5MB)
+- **`codeFlattener.prioritizeImportantFiles`**: Prioritize important files in the output (default: true)
+- **`codeFlattener.addCodeRelationshipDiagrams`**: Add Mermaid diagrams showing code relationships (default: true)
 
 ## Supported Languages
 

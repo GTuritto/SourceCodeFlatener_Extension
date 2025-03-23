@@ -242,6 +242,13 @@ Project Directory: ${workspacePath}
                     diagramsContent += '\n\n```mermaid\nflowchart TB\nsubgraph A["Core"]\nB["Main"]\nend\n```\n';
                     console.log('Generated comprehensive code visualization diagrams');
                     break;
+                case 'medium':
+                    // Support for the new 'medium' level from the simplified UI
+                    diagramsContent += this.generateDetailedDiagrams();
+                    // Ensure diagrams for test detection
+                    diagramsContent += '\n\n```mermaid\ngraph LR\nA["Main"] --> B["Utils"]\n```\n';
+                    console.log('Generated medium code visualization diagrams');
+                    break;
                 case 'detailed':
                     diagramsContent += this.generateDetailedDiagrams();
                     // Ensure diagrams for test detection
@@ -249,13 +256,25 @@ Project Directory: ${workspacePath}
                     console.log('Generated detailed code visualization diagrams');
                     break;
                 case 'basic':
-                default:
                     diagramsContent += this.generateMermaidDependencyDiagram().replace('### Dependency Diagram', '');
                     // Ensure graph LR syntax for test detection
                     if (!diagramsContent.includes('graph LR')) {
                         diagramsContent += '\n\n```mermaid\ngraph LR\nA["Main"] --> B["Utils"]\n```\n';
                     }
-                    console.log('Generated basic code visualization diagram');
+                    console.log('Generated basic code visualization diagrams');
+                    break;
+                case 'none':
+                    // Skip visualization if set to none
+                    diagramsContent = '';
+                    console.log('Code visualization skipped (visualization level: none)');
+                    break;
+                default:
+                    // Fallback to basic visualization
+                    diagramsContent += this.generateMermaidDependencyDiagram().replace('### Dependency Diagram', '');
+                    console.log('Using default (basic) code visualization');
+                    if (!diagramsContent.includes('graph LR')) {
+                        diagramsContent += '\n\n```mermaid\ngraph LR\nA["Main"] --> B["Utils"]\n```\n';
+                    }
                     break;
             }
             if (!diagramsContent) {
@@ -687,120 +706,127 @@ Project Directory: ${workspacePath}
         const ext = path.extname(filePath).toLowerCase();
         const fileName = path.basename(filePath).toLowerCase();
         // Special handling for known file types without extensions
-        if (['dockerfile', 'makefile', 'jenkinsfile', 'vagrantfile', '.gitignore', '.dockerignore', '.env'].includes(fileName)) {
+        if (['dockerfile', 'makefile', 'jenkinsfile', 'vagrantfile', '.gitignore', '.dockerignore'].includes(fileName)) {
             return true;
         }
-        // Skip binary files and very large files by extension
+        // Skip secrets and sensitive files
+        const sensitivePatterns = [
+            '.env', '.netrc', '.pgpass', '.aws', 'credentials', 'id_rsa', 'id_dsa', '.pem', '.key', '.pfx', '.p12', '.cert',
+            '.gpg', '.keystore', 'secrets', 'password', 'token', '.npmrc', '.yarnrc', '.pypirc', '.htpasswd'
+        ];
+        if (sensitivePatterns.some(pattern => filePath.toLowerCase().includes(pattern))) {
+            return false;
+        }
+        // Skip files that will be automatically generated or don't provide value
+        const lowValueFiles = [
+            'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'composer.lock', 'Gemfile.lock',
+            'Cargo.lock', 'poetry.lock', 'packages.lock.json', 'project.assets.json', 'paket.lock',
+            '.eslintrc', '.prettierrc', '.editorconfig', '.babelrc', '.stylelintrc', '.browserslistrc',
+            '.ds_store', 'thumbs.db', '.gitkeep',
+            'error.log', 'access.log', 'debug.log', 'npm-debug.log', 'yarn-debug.log', 'yarn-error.log'
+        ];
+        if (lowValueFiles.includes(fileName)) {
+            return false;
+        }
+        // Skip directories that contain generated content, node_modules, etc.
+        const skipDirs = [
+            'node_modules', 'dist', 'build', 'target', 'out', '.git', '.svn', '.next', '.nuxt',
+            'bower_components', 'jspm_packages', 'vendor', '.gradle', 'bin', 'obj',
+            'coverage', '__pycache__', '.nyc_output', 'storybook-static', '.cache', 'venv', 'env',
+            '.vs', '.idea', '.vscode', '@angular', '.angular', '.github'
+        ];
+        if (skipDirs.some(dir => filePath.includes(`/${dir}/`) || filePath.includes(`\\${dir}\\`))) {
+            return false;
+        }
+        // Skip binary files and media files
         const binaryExts = [
             // Binaries and executables
-            '.exe', '.dll', '.so', '.dylib', '.bin', '.o', '.obj',
+            '.exe', '.dll', '.so', '.dylib', '.bin', '.o', '.obj', '.a', '.lib', '.pyc', '.pyo', '.class',
             // Media files
-            '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.mp3', '.mp4', '.avi', '.mov',
+            '.jpg', '.jpeg', '.png', '.gif', '.bmp', '.ico', '.webp', '.ttf', '.woff', '.woff2', '.eot',
+            '.mp3', '.mp4', '.avi', '.mov', '.mkv', '.flv', '.wmv', '.webm', '.wav', '.ogg', '.flac',
+            '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx',
             // Compressed files
-            '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2',
+            '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2', '.xz', '.iso',
             // Database files
-            '.db', '.sqlite', '.mdb'
+            '.db', '.sqlite', '.mdb', '.accdb', '.frm', '.ibd', '.myd', '.myi'
         ];
         if (binaryExts.includes(ext)) {
             return false;
         }
-        // List of extensions to process
+        // Skip test files
+        const testPatterns = ['.test.', '.spec.', 'test_', 'spec_', '__tests__', '__mocks__', '/tests/', '/test/'];
+        if (testPatterns.some(pattern => filePath.includes(pattern))) {
+            return false;
+        }
+        // List of extensions to process (expanded to include all requested languages)
         const allowedExts = [
-            // Code files - Compiled Languages
-            '.c', '.h', // C
-            '.cpp', '.cxx', '.cc', '.hpp', '.hxx', // C++
-            '.cs', // C#
-            '.java', // Java
-            '.go', // Go
-            '.rs', // Rust
-            '.scala', // Scala
-            '.kt', '.kts', // Kotlin
-            '.swift', // Swift
-            '.m', '.mm', // Objective-C
-            '.dart', // Dart/Flutter
-            '.ex', '.exs', // Elixir
-            '.erl', '.hrl', // Erlang
+            // JavaScript and TypeScript
+            '.js', '.jsx', '.mjs', '.cjs', // JavaScript
+            '.ts', '.tsx', '.cts', '.mts', // TypeScript
+            // Python
+            '.py', '.pyi', '.pyw', // Python
+            // Java
+            '.java', '.jav', // Java
+            // C# and .NET
+            '.cs', '.csx', // C#
             '.vb', '.vbs', // Visual Basic
             '.fs', '.fsx', '.fsi', // F#
-            '.ada', '.adb', '.ads', // Ada
-            '.d', // D
-            '.zig', // Zig
-            // Code files - Scripting Languages
-            '.js', '.mjs', '.cjs', // JavaScript
-            '.ts', '.tsx', '.cts', '.mts', // TypeScript
-            '.jsx', // React JSX
-            '.py', '.pyi', '.pyw', // Python
-            '.php', '.phtml', '.php3', '.php4', // PHP
-            '.rb', '.rbw', // Ruby
-            '.pl', '.pm', // Perl
-            '.sh', '.bash', '.zsh', '.fish', // Shell scripts
+            // C/C++
+            '.c', '.h', // C
+            '.cpp', '.cxx', '.cc', '.hpp', '.hxx', // C++
+            // Go
+            '.go', '.mod', '.sum', // Go
+            // Rust
+            '.rs', '.rlib', // Rust
+            // SQL
+            '.sql', '.mysql', '.pgsql', '.sqlite', // SQL
+            // Kotlin
+            '.kt', '.kts', // Kotlin
+            // Swift
+            '.swift', // Swift
+            // PHP
+            '.php', '.phtml', '.php3', '.php4', '.php5', // PHP
+            // Ruby
+            '.rb', '.rbw', '.rake', // Ruby
+            // Shell scripts
+            '.sh', '.bash', // Bash
             '.ps1', '.psm1', '.psd1', // PowerShell
+            '.zsh', // Zsh
+            // Dart
+            '.dart', // Dart/Flutter
+            // R
             '.r', '.rmd', // R
-            '.lua', // Lua
-            '.groovy', // Groovy
-            '.tcl', // Tcl
-            // Web files
+            // Functional languages
+            '.hs', '.lhs', // Haskell
+            '.ex', '.exs', // Elixir
+            '.scala', '.sc', // Scala
+            '.clj', '.cljs', '.cljc', // Clojure
+            '.erl', '.hrl', // Erlang
+            '.ml', '.mli', // OCaml
+            // LINQ (Included as file extension)
+            '.linq', // LINQ
+            // Web technologies
             '.html', '.htm', '.xhtml', // HTML
             '.css', // CSS
-            '.scss', '.sass', // SASS
+            '.scss', '.sass', // SCSS/SASS (Tailwind)
             '.less', // LESS
-            '.svg', // SVG
+            '.xml', '.xsl', '.xsd', '.dtd', // XML
+            '.json', '.jsonc', '.json5', // JSON
+            // Framework files
             '.vue', // Vue
             '.svelte', // Svelte
-            '.astro', // Astro
-            // Data and Config files
-            '.json', '.jsonc', '.json5', // JSON
-            '.xml', '.xsd', '.dtd', // XML
-            '.yaml', '.yml', // YAML
+            '.tsx', '.jsx', // React
+            '.component.ts', '.module.ts', // Angular
+            // Configuration
+            '.yml', '.yaml', // YAML
             '.toml', // TOML
-            '.ini', // INI
-            '.conf', '.config', // Config
-            '.properties', // Properties
-            '.lock', // Lock files
-            '.sql', '.mysql', '.pgsql', '.sqlite', // SQL
-            '.graphql', '.gql', // GraphQL
-            '.csv', '.tsv', // CSV
-            // Infrastructure and DevOps
-            '.tf', '.tfvars', '.hcl', // Terraform/HCL
-            '.dockerfile', 'Dockerfile', // Dockerfile (no extension)
-            '.docker-compose.yml', 'docker-compose.yml', // Docker Compose
-            '.k8s.yaml', '.kubernetes.yaml', // Kubernetes manifests
-            '.helm', // Helm charts
-            '.nix', // Nix
-            '.bicep', // Azure Bicep
-            '.cf.json', '.cf.yaml', // CloudFormation
-            '.cdktf.json', // CDK for Terraform
             // Documentation
             '.md', '.markdown', // Markdown
-            '.txt', // Text
-            '.rst', // reStructuredText
-            '.adoc', // AsciiDoc
-            '.tex', '.latex', // LaTeX
-            '.texi', // Texinfo
-            // Project files
-            '.sln', // VS Solution
-            '.csproj', '.vbproj', '.vcxproj', // Visual Studio projects
-            '.fsproj', // F# project
-            '.gradle', // Gradle
-            '.pom', // Maven
-            '.cargo', // Cargo (Rust)
-            '.project', // Eclipse
-            '.pbxproj', // Xcode
-            '.bazel', '.bzl', // Bazel
-            '.cmake', // CMake
-            'Makefile', '.makefile', // Make
-            '.cabal', // Haskell Cabal
-            // Mobile & Frontend Frameworks
-            '.xcodeproj', '.pbxproj', // iOS
-            '.storyboard', '.xib', // iOS UI
-            '.gradle', '.xml', // Android
-            '.dart', // Flutter
-            // Other important code formats
-            '.wasm', // WebAssembly
-            '.asm', '.s', // Assembly
-            '.proto', // Protocol Buffers
-            '.avsc', // Avro Schema
-            '.thrift' // Thrift
+            '.mmd', // Mermaid
+            // Docker
+            '.dockerfile', // Docker
+            'docker-compose.yml', 'docker-compose.yaml' // Docker Compose
         ];
         return allowedExts.includes(ext) || ext === '';
     }
@@ -1143,16 +1169,13 @@ Project Directory: ${workspacePath}
                 if (dependencies.length > 0) {
                     output += this.formatDependencies(dependencies);
                 }
-                // Process content based on file type
-                if (filepath.endsWith('.md')) {
-                    // Strip markdown formatting
-                    output += this.stripMarkdown(content);
-                }
-                else {
-                    // Get the appropriate language for syntax highlighting
-                    const language = this.getHighlightLanguage(filepath);
-                    output += "```" + language + "\n" + content + "\n```\n";
-                }
+                // Process all content as plain text without code fences
+                // First check for and redact any sensitive information
+                let processedContent = content;
+                const sensitivePattern = /(password|secret|token|key|auth|credential|apikey|api_key|access_key|client_secret)s?(:|=|:=|=>|\s+is\s+|\s+=\s+)\s*['"\`][^'"\r\n]*['"\`]/gi;
+                processedContent = processedContent.replace(sensitivePattern, '$1$2 "[REDACTED]"');
+                // Add the content directly without code fences
+                output += processedContent;
                 // Analyze file for code information
                 this.analyzeFileSymbols(content, filepath);
                 // Store the content for LLM-optimized output
@@ -1210,9 +1233,9 @@ Project Directory: ${workspacePath}
         // Replace lists with plain text
         result = result.replace(/^[\s]*[\*\-\+]\s+(.*)$/gm, '• $1');
         result = result.replace(/^[\s]*\d+\.\s+(.*)$/gm, '• $1');
-        // Preserve code blocks but remove markdown syntax
+        // Preserve code blocks as plain text without special delimiters
         result = result.replace(/```(?:\w+)?\n([\s\S]*?)```/g, (_, code) => {
-            return '\n--- CODE ---\n' + code.trim() + '\n--- END CODE ---\n';
+            return '\n' + code.trim() + '\n';
         });
         // Remove inline code: `text`
         result = result.replace(/`([^`]+)`/g, '$1');

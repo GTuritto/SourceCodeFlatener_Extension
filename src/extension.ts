@@ -23,22 +23,25 @@ export function activate(context: vscode.ExtensionContext) {
             // Get configuration
             const config = vscode.workspace.getConfiguration('codeFlattener');
             const outputFolderName = config.get<string>('outputFolder', 'CodeFlattened_Output');
-            const excludePatterns = config.get<string[]>('excludePatterns', [
+            const maxFileSizeBytes = config.get<number>('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
+            const maxOutputFileSizeBytes = config.get<number>('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
+            const prioritizeImportantFiles = config.get<boolean>('prioritizeImportantFiles', true);
+            const addCodeRelationshipDiagrams = config.get<boolean>('addCodeRelationshipDiagrams', true);
+            
+            // Default exclude patterns for security and performance
+            const excludePatterns = [
                 'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
                 // Always exclude .env files which typically contain secrets
                 '.env', '.env.*', '**/.env', '**/.env.*'
-            ]);
-            const includePatterns = config.get<string[]>('includePatterns', []);
-            const maxFileSizeBytes = config.get<number>('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
-            const maxOutputFileSizeBytes = config.get<number>('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
+            ];
+            const includePatterns: string[] = [];
             
-            // LLM optimization configuration
-            const respectGitignore = config.get<boolean>('respectGitignore', true);
-            const enableSemanticCompression = config.get<boolean>('enableSemanticCompression', true);
-            const enhancedTableOfContents = config.get<boolean>('enhancedTableOfContents', true);
-            const prioritizeImportantFiles = config.get<boolean>('prioritizeImportantFiles', true);
-            // Force visualization level to basic for optimal performance
-            const visualizationLevel = 'basic'; // Always use basic regardless of user setting
+            // Always use gitignore and simplify the settings
+            const respectGitignore = true;
+            const enableSemanticCompression = false;
+            const enhancedTableOfContents = true;
+            // Use visualization based on the addCodeRelationshipDiagrams setting
+            const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';
             
             // If file is selected, include its path specifically
             const stats = await vscode.workspace.fs.stat(fileUri);
@@ -106,43 +109,43 @@ export function activate(context: vscode.ExtensionContext) {
             
             // Get configuration
             const config = vscode.workspace.getConfiguration('codeFlattener');
-            const outputFolderName = config.get<string>('outputFolder', 'CodeFlattened');
-            const excludePatterns = config.get<string[]>('excludePatterns', [
-                'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened/**',
-                // Always exclude .env files which typically contain secrets
-                '.env', '.env.*', '**/.env', '**/.env.*'
-            ]);
-            const includePatterns = config.get<string[]>('includePatterns', []);
+            const outputFolderName = config.get<string>('outputFolder', 'CodeFlattened_Output');
             const maxFileSizeBytes = config.get<number>('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
             const maxOutputFileSizeBytes = config.get<number>('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
-            
-            // LLM optimization configuration
-            const respectGitignore = config.get<boolean>('respectGitignore', true);
-            const enableSemanticCompression = config.get<boolean>('enableSemanticCompression', true);
-            const enhancedTableOfContents = config.get<boolean>('enhancedTableOfContents', true);
             const prioritizeImportantFiles = config.get<boolean>('prioritizeImportantFiles', true);
-            // Force visualization level to basic for optimal performance
-            const visualizationLevel = 'basic'; // Always use basic regardless of user setting
+            const addCodeRelationshipDiagrams = config.get<boolean>('addCodeRelationshipDiagrams', true);
             
-            // Ask the user if they want to specify any additional files to exclude
-            const shouldAskForExclusions = config.get<boolean>('promptForAdditionalExclusions', true);
-            if (shouldAskForExclusions) {
-                const additionalExcludesInput = await vscode.window.showInputBox({
-                    prompt: 'Enter additional files/patterns to exclude (comma-separated, leave empty for none)',
-                    placeHolder: 'e.g., secrets.json, **/*.log, test/fixtures/**'
-                });
+            // Default exclude patterns for security and performance
+            const excludePatterns = [
+                'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
+                // Always exclude .env files which typically contain secrets
+                '.env', '.env.*', '**/.env', '**/.env.*'
+            ];
+            const includePatterns: string[] = [];
+            
+            // Always use gitignore and simplify the settings
+            const respectGitignore = true;
+            const enableSemanticCompression = false;
+            const enhancedTableOfContents = true;
+            // Use visualization based on the addCodeRelationshipDiagrams setting
+            const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';
+            
+            // Always ask the user if they want to specify any additional files to exclude
+            const additionalExcludesInput = await vscode.window.showInputBox({
+                prompt: 'Enter additional files/patterns to exclude (comma-separated, leave empty for none)',
+                placeHolder: 'e.g., secrets.json, **/*.log, test/fixtures/**'
+            });
+            
+            if (additionalExcludesInput) {
+                // Split by commas and trim each pattern
+                const additionalExcludes = additionalExcludesInput
+                    .split(',')
+                    .map(pattern => pattern.trim())
+                    .filter(pattern => pattern.length > 0);
                 
-                if (additionalExcludesInput) {
-                    // Split by commas and trim each pattern
-                    const additionalExcludes = additionalExcludesInput
-                        .split(',')
-                        .map(pattern => pattern.trim())
-                        .filter(pattern => pattern.length > 0);
-                    
-                    if (additionalExcludes.length > 0) {
-                        excludePatterns.push(...additionalExcludes);
-                        console.log(`Added ${additionalExcludes.length} additional exclusion patterns from user input`);
-                    }
+                if (additionalExcludes.length > 0) {
+                    excludePatterns.push(...additionalExcludes);
+                    console.log(`Added ${additionalExcludes.length} additional exclusion patterns from user input`);
                 }
             }
 

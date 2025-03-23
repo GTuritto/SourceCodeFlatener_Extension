@@ -2,9 +2,31 @@
 
 All notable changes to the "CodeFlattener" extension will be documented in this file.
 
+## [1.6.0] - 2025-03-23
+
+### Added
+
+- New boolean setting `addCodeRelationshipDiagrams` to control code visualization
+- Added support for 'medium' level diagrams when visualization is enabled
+
+### Changed
+
+- Simplified extension settings to focus on essential options only
+- Streamlined code flattening process for better performance
+- All code files are now treated as plaintext without special delimiters
+- Updated file filtering to better handle sensitive information
+- Enhanced cross-platform compatibility
+- Default output folder changed to "CodeFlattened_Output"
+- Optimized for better performance with large language models (LLMs)
+
+### Removed
+
+- Simplified configuration by removing less-used settings while maintaining functionality
+- Removed code fence formatting from processed file contents
+
 ## [1.5.5] - 2025-03-23
 
-### Changes
+### Improvements
 
 - Updated extension name to consistently use "CodeFlattener" across all files
 - Removed redundant VERSION file to maintain single source of truth in package.json
