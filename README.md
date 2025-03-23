@@ -1,14 +1,14 @@
-# CodeFlattener
+# Code Flattener
 
-[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/GTuritto/CodeFlattener/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/CodeFlattener/blob/main/LICENSE)
-[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-blue.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
+[![Version](https://img.shields.io/badge/version-1.5.5-red.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases/code-flattener-1.5.5.vsix)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
+[![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
-## **Unlock the Full Potential of Your Codebase with One Click**
+## Overview
 
-### **A Practical Solution for AI-Assisted Development, Code Reviews, and Project Sharing**
+Code Flattener is a VS Code extension that transforms multi-file projects into structured, dependency-aware markdown documents. It solves common challenges with limited context in AI assistants and disjointed code reviews by delivering codebases as navigable, organized documents that preserve relationships between files.
 
-CodeFlattener transforms your multi-file project into a structured, dependency-aware markdown document. It aims to solve common challenges with limited context in AI assistants and disjointed code reviews by delivering your codebase as a single, organized document that preserves relationships between files.
+![Code Flattener Demo](assets/icon/Flattener.png)
 
 ## Key Features
 
@@ -20,48 +20,49 @@ CodeFlattener transforms your multi-file project into a structured, dependency-a
 - **Customizable**: Configurable output location, file filtering, and size limits
 - **Performance Optimized**: Uses parallel processing for fast execution on large codebases
 
-## How to Use CodeFlattener
+## Installation Options
+
+### VS Code Marketplace (Recommended)
+
+Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener) for automatic updates.
+
+### Direct Download from GitHub
+
+**[⬇️ Download Latest Release (v1.5.3)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/code-flattener-latest.vsix)**
+
+To install from VSIX:
+
+1. Download the file from the link above
+2. Open VS Code
+3. Go to Extensions view (Ctrl+Shift+X)
+4. Click on the three dots (...) in the top-right corner
+5. Select "Install from VSIX..."
+6. Choose the downloaded file
+
+## Usage
 
 ### Quick Start
 
-1. Open your project folder in VSCode
+1. Open your project folder in VS Code
 2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the command palette
 3. Type "Flatten Code" and select the command
 4. Wait while the extension processes your files (a progress indicator will be shown)
 5. Once complete, a notification will appear with the location of your flattened code
 6. Open the `CodeFlattened` folder (or your custom output folder) to view the generated markdown files
 
-### Viewing the Results
+### Configuration Options
 
-The extension generates comprehensive markdown files that include:
+In VS Code Settings (`Ctrl+,` or `Cmd+,`), search for "Code Flattener" to configure:
 
-- A summary section with file counts and statistics
-- A directory structure visualization to help navigate your project
-- For each file, a list of its dependencies and complete code
-- A Mermaid dependency diagram to visualize file relationships
-
-### Customizing the Output
-
-1. Go to VS Code Settings (`Ctrl+,` or `Cmd+,`)
-2. Search for "CodeFlattener"
-3. Modify any of the following settings:
-   - Change the output folder name
-   - Exclude specific file patterns
-   - Include only specific file patterns
-   - Adjust maximum file size limits
-   - Set output file size for splitting large codebases
-
-## Extension Settings
-
-- **codeFlattener.outputFolder**: Name of the folder where flattened code will be saved (default: "CodeFlattened")
-- **codeFlattener.excludePatterns**: Patterns to exclude from processing in glob format
-- **codeFlattener.includePatterns**: Patterns to include in processing in glob format
-- **codeFlattener.maxFileSizeBytes**: Maximum file size in bytes for analysis (default: 10MB)
-- **codeFlattener.maxOutputFileSizeBytes**: Maximum output file size before rotation (default: 5MB)
+- **`code-flattener.outputFolder`**: Name of the folder where flattened code will be saved (default: "CodeFlattened")
+- **`code-flattener.excludePatterns`**: Patterns to exclude from processing in glob format
+- **`code-flattener.includePatterns`**: Patterns to include in processing in glob format
+- **`code-flattener.maxFileSizeBytes`**: Maximum file size in bytes for analysis (default: 10MB)
+- **`code-flattener.maxOutputFileSizeBytes`**: Maximum output file size before rotation (default: 5MB)
 
 ## Supported Languages
 
-CodeFlattener works with most popular programming languages and file formats:
+Code Flattener works with most popular programming languages and file formats:
 
 - **Programming**: JavaScript, TypeScript, Python, Java, C/C++, C#, Go, Ruby, PHP, Rust, Swift, Kotlin, Dart, and more
 - **Web**: HTML, CSS, SCSS, LESS, SVG
@@ -81,74 +82,81 @@ The extension automatically detects dependencies between files for all major lan
 - **Go**: import statements
 - **And many more**: PHP, Ruby, Rust, Swift, Kotlin, Dart, Elixir, Erlang, etc.
 
-This helps AI models understand file relationships in your codebase, improving context-aware code generation.
-
-## Performance Optimizations
-
-- **Parallel Processing**: Files are processed in parallel batches for faster execution
-- **Efficient File I/O**: Minimizes disk operations by batching writes
-- **Smart File Filtering**: Uses efficient glob pattern matching
-- **Memory Management**: Handles large files gracefully to avoid memory issues
-- **Robust Error Handling**: Continues processing despite individual file failures
-
-## How CodeFlattener Can Help You
-
-- **Enhance AI Coding Assistants**: Feed your codebase to AI tools with better context preservation
-- **Streamline Code Reviews**: Share navigable code snapshots with clear dependencies
-- **Simplify Documentation**: Generate dependency-aware documentation for onboarding
-- **Explore New Codebases**: Flatten unfamiliar projects to understand architecture more clearly
-
 ## Troubleshooting
+
+### Command Not Found Error
+
+If you encounter an error that the command `code-flattner.flattenCode` is not found, please note the correct command ID is `code-flattener.flattenCode` (with an 'e' between 't' and 'n').
+
+The recommended way to use the extension is through the Command Palette:
+
+1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+2. Type "Flatten Code" (not the full command ID)
+3. Select the command from the dropdown
+
+If you're calling the command programmatically, make sure to use the correct ID: `code-flattener.flattenCode`
+
+### Other Common Issues
 
 - **Processing takes too long**: Try excluding non-essential directories using the exclude patterns
 - **Output file is too large**: Adjust the `maxOutputFileSizeBytes` setting
 - **Missing important files**: Check your include/exclude patterns
 - **Memory issues**: Increase the `maxFileSizeBytes` setting for very large codebases
 
----
+## Development
 
-## Installation Options
-
-### VS Code Marketplace (Recommended)
-
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener) for automatic updates.
-
-### Direct Download from GitHub
-
-**[⬇️ Download Latest Release (v1.5.5)](https://github.com/GTuritto/CodeFlattener/raw/main/releases/code-flattener-1.5.5.vsix)**
-
-To install from VSIX:
-
-1. Download the file from the link above
-2. Open VS Code
-3. Go to Extensions view (Ctrl+Shift+X)
-4. Click on the three dots (...) in the top-right corner
-5. Select "Install from VSIX..."
-6. Choose the downloaded file
-
-### Manual Installation from GitHub
+### Setup
 
 1. Clone the repository:
-
+  
    ```bash
-   git clone https://github.com/GTuritto/CodeFlattener.git
+   git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git
+   cd SourceCodeFlatener_Extension
    ```
 
 2. Install dependencies:
-
+  
    ```bash
-   cd SourceCodeFlatener_Extension
    npm install
    ```
 
-3. Install the extension:
-
+3. Open in VS Code:
+  
    ```bash
-   code --install-extension .
+   code .
    ```
+
+### Build and Run
+
+- **Compile**: `npm run compile`
+- **Watch for changes**: `npm run watch`
+- **Lint**: `npm run lint`
+- **Test**: `npm run test`
+
+### Debug
+
+1. Press F5 in VS Code to start debugging
+2. This will open a new VS Code window with the extension loaded
+3. Use the "Flatten Code" command to test the extension
+
+### Packaging
+
+```bash
+npx vsce package
+```
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
 **⭐ If you find this extension helpful, please consider [leaving a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)! ⭐**
-
-**[Submit Feedback](https://codeflattener.canny.io/) | [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details) | [GitHub Repository](https://github.com/GTuritto/CodeFlattener) | Contact: [giuseppe@turitto.net](mailto:giuseppe@turitto.net) (limited support)**
