@@ -27,16 +27,16 @@ if [ $? -eq 0 ]; then
   echo "Publishing successful!"
   
   # Make sure the VSIX exists in the releases folder
-  if [ ! -f "releases/source-code-flattener-$VERSION.vsix" ]; then
+  if [ ! -f "releases/code-flattener-$VERSION.vsix" ]; then
     echo "Moving VSIX to releases folder..."
     mkdir -p releases
-    mv source-code-flattener-$VERSION.vsix releases/
+    mv code-flattener-$VERSION.vsix releases/
   fi
   
   # Update the symlink
   echo "Updating latest symlink..."
   cd releases
-  ln -sf source-code-flattener-$VERSION.vsix source-code-flattener-latest.vsix
+  ln -sf code-flattener-$VERSION.vsix code-flattener-latest.vsix
   cd ..
   
   echo "Done! Version $VERSION is now published and available as the latest version."

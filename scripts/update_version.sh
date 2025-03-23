@@ -32,8 +32,11 @@ fi
 # The existing CHANGELOG.md update is sufficient
 
 echo "Version updated to $NEW_VERSION in all files."
-echo "Don't forget to:"
-echo "1. Build the new package: npx vsce package"
-echo "2. Copy VSIX to releases: cp *.vsix releases/code-flattener-$NEW_VERSION.vsix"
-echo "3. Create a Git tag: git tag -a v$NEW_VERSION -m 'Version $NEW_VERSION'"
-echo "4. Push changes: git push && git push --tags"
+echo ""
+echo "Next steps:"
+echo "1. Build the extension: ./scripts/build.sh"
+echo "2. Create a Git tag: git tag -a v$NEW_VERSION -m 'Version $NEW_VERSION'"
+echo "3. Push changes: git push && git push --tags"
+echo ""
+echo "The build script will automatically place the VSIX file in the releases/ folder."
+echo "The packaged extension will be available at: releases/code-flattener-$NEW_VERSION.vsix"
