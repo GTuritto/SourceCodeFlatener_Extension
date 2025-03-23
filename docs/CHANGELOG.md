@@ -6,6 +6,7 @@ All notable changes to the "CodeFlattener" extension will be documented in this 
 
 ### Added
 
+- New boolean setting `minifyOutput` to optimize flattened code size for LLMs (enabled by default)
 - New boolean setting `addCodeRelationshipDiagrams` to control code visualization
 - Added support for 'medium' level diagrams when visualization is enabled
 
@@ -18,6 +19,7 @@ All notable changes to the "CodeFlattener" extension will be documented in this 
 - Enhanced cross-platform compatibility
 - Default output folder changed to "CodeFlattened_Output"
 - Optimized for better performance with large language models (LLMs)
+- Implemented smart minification for output files that reduces token usage while preserving code structure and important comments
 
 ### Removed
 

@@ -53,6 +53,7 @@ interface LLMOptimizationOptions {
     enhancedTableOfContents: boolean;   // Always true - provides better navigation
     prioritizeImportantFiles: boolean;  // User configurable setting
     visualizationLevel: string;         // Based on addCodeRelationshipDiagrams setting (none|medium)
+    minifyOutput: boolean;              // Whether to minify output for LLM optimization
 }
 
 /**
@@ -80,6 +81,8 @@ export class CodeFlattener {
     private processedContent = '';
     // Track file dependencies for dependency diagram
     private fileDependencies = new Map<string, string[]>();
+    // Store LLM optimization options for use in various methods
+    private llmOptions?: LLMOptimizationOptions;
     // Configuration for code analysis
     private supportedExtensions = [
         '.js', '.ts', '.py', '.java', '.cs', '.go', '.php', '.rb', '.rs'
@@ -119,8 +122,12 @@ export class CodeFlattener {
                 enableSemanticCompression: true,
                 enhancedTableOfContents: true,
                 prioritizeImportantFiles: true,
-                visualizationLevel: 'comprehensive'
+                visualizationLevel: 'comprehensive',
+                minifyOutput: true // Default to minify output for LLM optimization
             };
+            
+            // Store options for use in other methods
+            this.llmOptions = options;
             
             progressCallback(`Starting flattening process...`, 0.01);
             
@@ -1297,6 +1304,134 @@ Project Directory: ${workspacePath}
         
         return result + "\n";
     }
+    
+    /**
+     * Minify content to reduce size and token usage for LLMs
+     * @param content The content to minify
+     * @returns Minified content
+     */
+    private minifyContent(content: string): string {
+        // Skip minification for empty content
+        if (!content || content.trim() === '') {
+            return content;
+        }
+        
+        // Much more conservative binary detection that only looks for null bytes and other problematic control characters
+        // This avoids incorrectly identifying source code with extended ASCII as binary
+        const suspiciousChars = content.substring(0, 1000).match(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g);
+        if (suspiciousChars && suspiciousChars.length > 10) {
+            // Only skip if there are many control characters, indicating likely binary content
+            return content;
+        }
+        
+        let minified = content;
+        
+        // SAFE MINIFICATION: Only perform minimal operations that won't affect code semantics
+        
+        // 1. Remove trailing whitespace on each line
+        minified = minified.replace(/[ \t]+$/gm, '');
+        
+        // 2. Reduce (but don't eliminate) excessive consecutive blank lines
+        // More conservative - only compress sequences of 5+ blank lines down to 3 blank lines
+        // This maintains better code separation and structure
+        minified = minified.replace(/\n{5,}/g, '\n\n\n\n');
+        
+        // 3. Only minify obviously verbose comments, preserving structure and important details
+        // Handle multi-line comments carefully
+        try {
+            minified = minified.replace(/\/\*\*([\s\S]*?)\*\//g, (match) => {
+                // Skip if the comment includes any meaningful annotation or is less than 100 chars
+                if (match.includes('@') || // Keep JSDoc and annotations
+                    match.toLowerCase().includes('copyright') || 
+                    match.toLowerCase().includes('license') || 
+                    match.toLowerCase().includes('todo') || 
+                    match.toLowerCase().includes('fixme') || 
+                    match.toLowerCase().includes('important') || 
+                    match.length < 100) { 
+                    return match; // Preserve these comments completely
+                }
+                
+                // For longer comments, maintain structure but trim excessive whitespace
+                return match.replace(/\n[ \t]*\*[ \t]*/g, '\n * ')
+                           .replace(/[ \t]{2,}/g, ' ');
+            });
+        } catch (e) {
+            // If any regex processing fails, return the original content unmodified
+            // This prevents potential issues with complex patterns
+            return content;
+        }
+        
+        // 4. Handle single-line comment sequences very conservatively
+        // Only condense long sequences of very similar comments
+        try {
+            minified = minified.replace(/(\/\/[^\n]*\n){5,}/g, (match) => {
+                const comments = match.split('\n').filter(line => line.trim() !== '');
+                
+                // Check if comments are very similar using a simple heuristic
+                let similarCount = 0;
+                const firstComment = comments[0];
+                const similarityThreshold = 0.8;
+                
+                for (let i = 1; i < comments.length; i++) {
+                    const similarity = this.calculateSimilarity(firstComment, comments[i]);
+                    if (similarity > similarityThreshold) {
+                        similarCount++;
+                    }
+                }
+                
+                // Only condense if most comments are very similar
+                if (similarCount > comments.length * 0.8 && comments.length > 10) {
+                    return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                }
+                return match; // Keep original if not highly similar
+            });
+        } catch (e) {
+            // If any regex processing fails, return the original content
+            return content;
+        }
+        
+        return minified;
+    }
+    
+    /**
+     * Calculate simple similarity between two strings for comment comparison
+     * @param str1 First string
+     * @param str2 Second string
+     * @returns Similarity score between 0 and 1
+     */
+    private calculateSimilarity(str1: string, str2: string): number {
+        if (!str1 || !str2) return 0;
+        const length = Math.max(str1.length, str2.length);
+        if (length === 0) return 1.0;
+        
+        // Simple Levenshtein distance implementation
+        const a = str1.toLowerCase();
+        const b = str2.toLowerCase();
+        const matrix = [];
+        
+        // Initialize matrix
+        for (let i = 0; i <= a.length; i++) {
+            matrix[i] = [i];
+        }
+        for (let j = 0; j <= b.length; j++) {
+            matrix[0][j] = j;
+        }
+        
+        // Fill in the matrix
+        for (let i = 1; i <= a.length; i++) {
+            for (let j = 1; j <= b.length; j++) {
+                const cost = a.charAt(i - 1) === b.charAt(j - 1) ? 0 : 1;
+                matrix[i][j] = Math.min(
+                    matrix[i - 1][j] + 1,      // deletion
+                    matrix[i][j - 1] + 1,      // insertion
+                    matrix[i - 1][j - 1] + cost // substitution
+                );
+            }
+        }
+        
+        // Convert distance to similarity (1 - normalized distance)
+        return 1 - (matrix[a.length][b.length] / length);
+    }
 
     /**
      * Process the contents of a file
@@ -1337,6 +1472,11 @@ Project Directory: ${workspacePath}
                 let processedContent = content;
                 const sensitivePattern = /(password|secret|token|key|auth|credential|apikey|api_key|access_key|client_secret)s?(:|=|:=|=>|\s+is\s+|\s+=\s+)\s*['"\`][^'"\r\n]*['"\`]/gi;
                 processedContent = processedContent.replace(sensitivePattern, '$1$2 "[REDACTED]"');
+                
+                // Minify content if enabled in options to optimize for LLMs
+                if (this.llmOptions?.minifyOutput) {
+                    processedContent = this.minifyContent(processedContent);
+                }
                 
                 // Add the content directly without code fences
                 output += processedContent;

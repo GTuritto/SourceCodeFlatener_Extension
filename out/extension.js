@@ -40,6 +40,24 @@ const path = __importStar(require("path"));
 const codeFlattener_1 = require("./codeFlattener");
 function activate(context) {
     console.log('CodeFlattener extension is now active');
+    // Remove any legacy settings from VS Code's cache
+    const legacySettings = [
+        'codeFlattener.enableSemanticCompression',
+        'codeFlattener.enhancedTableOfContents',
+        'codeFlattener.excludePatterns',
+        'codeFlattener.includePatterns',
+        'codeFlattener.promptForAdditionalExclusions',
+        'codeFlattener.respectGitignore',
+        'codeFlattener.visualizationLevel'
+    ];
+    // Force-migrate users from old settings to new simplified settings
+    const config = vscode.workspace.getConfiguration('codeFlattener');
+    legacySettings.forEach(setting => {
+        const key = setting.replace('codeFlattener.', '');
+        // Reset any legacy settings to undefined to remove them from user settings.json
+        config.update(key, undefined, vscode.ConfigurationTarget.Global);
+        config.update(key, undefined, vscode.ConfigurationTarget.Workspace);
+    });
     const flattener = new codeFlattener_1.CodeFlattener();
     // Register Explorer context menu command
     const contextMenuDisposable = vscode.commands.registerCommand('code-flattener.flattenFromExplorer', async (fileUri) => {
@@ -57,6 +75,7 @@ function activate(context) {
             const maxOutputFileSizeBytes = config.get('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
             const prioritizeImportantFiles = config.get('prioritizeImportantFiles', true);
             const addCodeRelationshipDiagrams = config.get('addCodeRelationshipDiagrams', true);
+            const minifyOutput = config.get('minifyOutput', true); // New setting for LLM optimization
             // Default exclude patterns for security and performance
             const excludePatterns = [
                 'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
@@ -95,7 +114,8 @@ function activate(context) {
                         enableSemanticCompression,
                         enhancedTableOfContents,
                         prioritizeImportantFiles,
-                        visualizationLevel
+                        visualizationLevel,
+                        minifyOutput
                     });
                     vscode.window.showInformationMessage('Code has been flattened successfully!');
                 }
@@ -125,6 +145,7 @@ function activate(context) {
             const maxOutputFileSizeBytes = config.get('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
             const prioritizeImportantFiles = config.get('prioritizeImportantFiles', true);
             const addCodeRelationshipDiagrams = config.get('addCodeRelationshipDiagrams', true);
+            const minifyOutput = config.get('minifyOutput', true); // New setting for LLM optimization
             // Default exclude patterns for security and performance
             const excludePatterns = [
                 'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
@@ -177,7 +198,8 @@ function activate(context) {
                         enableSemanticCompression,
                         enhancedTableOfContents,
                         prioritizeImportantFiles,
-                        visualizationLevel
+                        visualizationLevel,
+                        minifyOutput
                     });
                     vscode.window.showInformationMessage('Code has been flattened successfully!');
                 }

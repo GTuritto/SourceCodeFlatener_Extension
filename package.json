@@ -70,6 +70,11 @@
           "type": "boolean",
           "default": true,
           "description": "Add Mermaid diagrams showing code relationships and structure in the flattened output"
+        },
+        "codeFlattener.minifyOutput": {
+          "type": "boolean",
+          "default": true,
+          "description": "Minify output files by removing extra whitespace and comments to optimize for LLMs and reduce token usage"
         }
       }
     }
@@ -106,6 +111,7 @@
     "@types/glob": "^8.1.0",
     "@types/node": "^22.13.10",
     "@types/vscode": "^1.86.0",
+    "terser": "^5.39.0",
     "typescript": "^5.8.2",
     "vscode-test": "^1.6.1"
   },

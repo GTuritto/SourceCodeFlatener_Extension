@@ -1,6 +1,8 @@
+# Development files
 .vscode/**
 .vscode-test/**
 src/**
+.git/**
 .gitignore
 .gitattributes
 .github/**
@@ -11,6 +13,8 @@ src/**
 .editorconfig
 .prettierrc
 .npmrc
+
+# Include only the specific node_modules we need
 node_modules/**
 !node_modules/glob/**
 !node_modules/balanced-match/**
@@ -19,23 +23,41 @@ node_modules/**
 !node_modules/inflight/**
 !node_modules/inherits/**
 !node_modules/minimatch/**
+!node_modules/once/**
+!node_modules/wrappy/**
 
-# Exclude test files to keep the package small
+# Build and release artifacts
+release.sh
+releases/**
+RELEASE_NOTES.md
+**/*.vsix
+
+# Test files
 tests/**
 **/*.spec.js
 **/*.test.js
 **/*.spec.ts
 **/*.test.ts
+test_project/**
 **/test_project/**
 **/CodeFlattened_Tests/**
-!node_modules/once/**
-!node_modules/wrappy/**
-
-# Test files
-test_project/**
 test_flattener.js
+
+# Examples (not needed for runtime)
+examples/**
+
+# Documentation that's not needed for extension functionality
+docs/**
+!docs/CHANGELOG.md
+
+# Extra image files
 images/create_icon.js
 images/icon.svg
+assets/icon/source/**
 
 # Trunk files
 .trunk/**
+
+# Unnecessary duplicate files
+README copy.md
+pip.md
