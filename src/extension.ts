@@ -8,6 +8,90 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('CodeFlattener extension is now active');
 
     const flattener = new CodeFlattener();
+    
+    // Register Explorer context menu command
+    const contextMenuDisposable = vscode.commands.registerCommand('code-flattener.flattenFromExplorer', async (fileUri: vscode.Uri) => {
+        try {
+            // Get workspace folder containing the selected file
+            if (!vscode.workspace.workspaceFolders || vscode.workspace.workspaceFolders.length === 0) {
+                vscode.window.showErrorMessage('No workspace folder is open. Please open a project first.');
+                return;
+            }
+            
+            const workspaceFolder = vscode.workspace.getWorkspaceFolder(fileUri)?.uri.fsPath || vscode.workspace.workspaceFolders[0].uri.fsPath;
+            
+            // Get configuration
+            const config = vscode.workspace.getConfiguration('codeFlattener');
+            const outputFolderName = config.get<string>('outputFolder', 'CodeFlattened_Output');
+            const excludePatterns = config.get<string[]>('excludePatterns', [
+                'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened_Output/**',
+                // Always exclude .env files which typically contain secrets
+                '.env', '.env.*', '**/.env', '**/.env.*'
+            ]);
+            const includePatterns = config.get<string[]>('includePatterns', []);
+            const maxFileSizeBytes = config.get<number>('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
+            const maxOutputFileSizeBytes = config.get<number>('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
+            
+            // LLM optimization configuration
+            const respectGitignore = config.get<boolean>('respectGitignore', true);
+            const enableSemanticCompression = config.get<boolean>('enableSemanticCompression', true);
+            const enhancedTableOfContents = config.get<boolean>('enhancedTableOfContents', true);
+            const prioritizeImportantFiles = config.get<boolean>('prioritizeImportantFiles', true);
+            // Force visualization level to basic for optimal performance
+            const visualizationLevel = 'basic'; // Always use basic regardless of user setting
+            
+            // If file is selected, include its path specifically
+            const stats = await vscode.workspace.fs.stat(fileUri);
+            if (stats.type === vscode.FileType.File) {
+                const relativePath = path.relative(workspaceFolder, fileUri.fsPath);
+                includePatterns.push(relativePath);
+                vscode.window.showInformationMessage(`Added ${relativePath} to include patterns`);
+            }
+            
+            // Run the flattening process
+            const outputFolder = path.join(workspaceFolder, outputFolderName);
+            
+            // Create progress notification
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: "Flattening Code",
+                cancellable: true
+            }, async (progress, token) => {
+                token.onCancellationRequested(() => {
+                    console.log("User canceled the flattening operation");
+                });
+
+                progress.report({ increment: 0, message: "Starting..." });
+
+                try {
+                    await flattener.flattenWorkspace(
+                        workspaceFolder,
+                        outputFolder,
+                        includePatterns,
+                        excludePatterns,
+                        maxFileSizeBytes,
+                        maxOutputFileSizeBytes,
+                        (message: string, increment: number) => progress.report({ increment, message }),
+                        {
+                            respectGitignore,
+                            enableSemanticCompression,
+                            enhancedTableOfContents,
+                            prioritizeImportantFiles,
+                            visualizationLevel
+                        }
+                    );
+
+                    vscode.window.showInformationMessage('Code has been flattened successfully!');
+                } catch (err: any) {
+                    vscode.window.showErrorMessage(`Error flattening code: ${err.message}`);
+                }
+            });
+        } catch (err: any) {
+            vscode.window.showErrorMessage(`Error: ${err.message}`);
+        }
+    });
+    
+    context.subscriptions.push(contextMenuDisposable);
 
     // Register the flatten code command
     const disposable = vscode.commands.registerCommand('code-flattener.flattenCode', async () => {
@@ -23,10 +107,44 @@ export function activate(context: vscode.ExtensionContext) {
             // Get configuration
             const config = vscode.workspace.getConfiguration('codeFlattener');
             const outputFolderName = config.get<string>('outputFolder', 'CodeFlattened');
-            const excludePatterns = config.get<string[]>('excludePatterns', ['bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened/**']);
+            const excludePatterns = config.get<string[]>('excludePatterns', [
+                'bin/**', 'obj/**', 'node_modules/**', '**/CodeFlattened/**',
+                // Always exclude .env files which typically contain secrets
+                '.env', '.env.*', '**/.env', '**/.env.*'
+            ]);
             const includePatterns = config.get<string[]>('includePatterns', []);
             const maxFileSizeBytes = config.get<number>('maxFileSizeBytes', 10 * 1024 * 1024); // 10 MB
             const maxOutputFileSizeBytes = config.get<number>('maxOutputFileSizeBytes', 5 * 1024 * 1024); // 5 MB
+            
+            // LLM optimization configuration
+            const respectGitignore = config.get<boolean>('respectGitignore', true);
+            const enableSemanticCompression = config.get<boolean>('enableSemanticCompression', true);
+            const enhancedTableOfContents = config.get<boolean>('enhancedTableOfContents', true);
+            const prioritizeImportantFiles = config.get<boolean>('prioritizeImportantFiles', true);
+            // Force visualization level to basic for optimal performance
+            const visualizationLevel = 'basic'; // Always use basic regardless of user setting
+            
+            // Ask the user if they want to specify any additional files to exclude
+            const shouldAskForExclusions = config.get<boolean>('promptForAdditionalExclusions', true);
+            if (shouldAskForExclusions) {
+                const additionalExcludesInput = await vscode.window.showInputBox({
+                    prompt: 'Enter additional files/patterns to exclude (comma-separated, leave empty for none)',
+                    placeHolder: 'e.g., secrets.json, **/*.log, test/fixtures/**'
+                });
+                
+                if (additionalExcludesInput) {
+                    // Split by commas and trim each pattern
+                    const additionalExcludes = additionalExcludesInput
+                        .split(',')
+                        .map(pattern => pattern.trim())
+                        .filter(pattern => pattern.length > 0);
+                    
+                    if (additionalExcludes.length > 0) {
+                        excludePatterns.push(...additionalExcludes);
+                        console.log(`Added ${additionalExcludes.length} additional exclusion patterns from user input`);
+                    }
+                }
+            }
 
             // Always add the output folder to excludes to avoid processing it
             const normalizedOutputFolder = outputFolderName.endsWith('/') ? outputFolderName : `${outputFolderName}/**`;
@@ -57,7 +175,14 @@ export function activate(context: vscode.ExtensionContext) {
                         excludePatterns,
                         maxFileSizeBytes,
                         maxOutputFileSizeBytes,
-                        (message: string, increment: number) => progress.report({ increment, message })
+                        (message: string, increment: number) => progress.report({ increment, message }),
+                        {
+                            respectGitignore,
+                            enableSemanticCompression,
+                            enhancedTableOfContents,
+                            prioritizeImportantFiles,
+                            visualizationLevel
+                        }
                     );
 
                     vscode.window.showInformationMessage('Code has been flattened successfully!');

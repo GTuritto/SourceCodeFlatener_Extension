@@ -1,16 +1,28 @@
 #!/bin/bash
 
-# Script to update version numbers across all project files
+# Script to update version numbers across all project files based on VERSION file
 
-# Check if a new version was provided
-if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 NEW_VERSION"
-    echo "Example: $0 1.2.0"
+# Path to the VERSION file
+VERSION_FILE="$(dirname "$0")/../VERSION"
+
+# Check if VERSION file exists
+if [ ! -f "$VERSION_FILE" ]; then
+    echo "Error: VERSION file not found at $VERSION_FILE"
+    echo "Please create a VERSION file in the root directory with the current version number."
     exit 1
 fi
 
-# Store the new version
-NEW_VERSION=$1
+# Read version from VERSION file
+NEW_VERSION=$(cat "$VERSION_FILE" | tr -d '\r\n')
+
+# Validate version format
+if ! [[ $NEW_VERSION =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Error: Invalid version format in VERSION file. Expected format: X.Y.Z"
+    echo "Current content: $NEW_VERSION"
+    exit 1
+fi
+
+echo "Using version $NEW_VERSION from VERSION file"
 
 # Update package.json using jq if available, otherwise with sed
 if command -v jq &> /dev/null; then
@@ -40,3 +52,6 @@ echo "3. Push changes: git push && git push --tags"
 echo ""
 echo "The build script will automatically place the VSIX file in the releases/ folder."
 echo "The packaged extension will be available at: releases/code-flattener-$NEW_VERSION.vsix"
+
+echo ""
+echo "NOTE: To update the version, edit the VERSION file in the root directory and run this script again."

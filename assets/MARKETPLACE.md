@@ -1,7 +1,7 @@
 # CodeFlattener
 
-[![Version](https://img.shields.io/badge/version-1.5.5-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-1.6.0-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 
 ## Unlock the Full Potential of Your Codebase with One Click
 

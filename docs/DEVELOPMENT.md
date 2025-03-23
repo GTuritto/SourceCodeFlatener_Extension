@@ -6,19 +6,20 @@ This document provides information for developers who want to contribute to or m
 
 This project uses a centralized versioning system to maintain consistent version numbers across all files:
 
-- The current version is stored in the `VERSION` file at the root of the project
-- An automated script (`update_version.sh`) helps update version numbers across all files
+- The current version is stored in the `VERSION` file at the root of the project (single source of truth)
+- An automated script (`scripts/update_version.sh`) synchronizes this version across all files
 
-To update the version number:
+To update the version:
+
+1. Edit the `VERSION` file in the root directory with the new version number (format: X.Y.Z)
+2. Run the update script to synchronize all files:
 
 ```bash
-./update_version.sh NEW_VERSION
-# Example: ./update_version.sh 1.2.0
+./scripts/update_version.sh
 ```
 
 The script will automatically update:
 
-- VERSION file
 - package.json
 - README.md
 - DOWNLOAD.md

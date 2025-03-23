@@ -19,6 +19,15 @@ node_modules/**
 !node_modules/inflight/**
 !node_modules/inherits/**
 !node_modules/minimatch/**
+
+# Exclude test files to keep the package small
+tests/**
+**/*.spec.js
+**/*.test.js
+**/*.spec.ts
+**/*.test.ts
+**/test_project/**
+**/CodeFlattened_Tests/**
 !node_modules/once/**
 !node_modules/wrappy/**
 

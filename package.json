@@ -1,7 +1,7 @@
 {
   "name": "code-flattener",
   "displayName": "CodeFlattener",
-  "version": "1.5.5",
+  "version": "1.6.0",
   "description": "Transform your codebase into a perfectly structured markdown document - Boost AI coding assistants with full context, simplify code reviews, and share your projects effortlessly",
   "publisher": "GiuseppeTuritto",
   "engines": {
@@ -29,14 +29,26 @@
       {
         "command": "code-flattener.flattenCode",
         "title": "Flatten Code"
+      },
+      {
+        "command": "code-flattener.flattenFromExplorer",
+        "title": "Flatten Code (From Explorer)"
       }
     ],
+    "menus": {
+      "explorer/context": [
+        {
+          "command": "code-flattener.flattenFromExplorer",
+          "group": "navigation"
+        }
+      ]
+    },
     "configuration": {
       "title": "CodeFlattener",
       "properties": {
         "codeFlattener.outputFolder": {
           "type": "string",
-          "default": "CodeFlattened",
+          "default": "CodeFlattened_Output",
           "description": "Name of the folder where flattened source code will be saved"
         },
         "codeFlattener.excludePatterns": {
@@ -66,6 +78,36 @@
           "type": "number",
           "default": 5242880,
           "description": "Maximum output file size in bytes before rotation (default: 5MB)"
+        },
+        "codeFlattener.respectGitignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to respect the project's .gitignore file for file exclusions"
+        },
+        "codeFlattener.enableSemanticCompression": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable semantic compression to optimize output for LLMs by removing redundant content"
+        },
+        "codeFlattener.enhancedTableOfContents": {
+          "type": "boolean",
+          "default": true,
+          "description": "Generate an enhanced table of contents with more detail for better navigation"
+        },
+        "codeFlattener.prioritizeImportantFiles": {
+          "type": "boolean",
+          "default": true,
+          "description": "Prioritize important files (like main entry points, config files) in the output"
+        },
+        "codeFlattener.visualizationLevel": {
+          "type": "string",
+          "default": "basic",
+          "description": "Level of detail for code relationship visualizations (fixed at basic level for optimal performance)"
+        },
+        "codeFlattener.promptForAdditionalExclusions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to prompt the user for additional files/patterns to exclude at runtime"
         }
       }
     }
