@@ -20,7 +20,7 @@
   "qna": "marketplace",
   "extensionDependencies": [],
   "extensionPack": [],
-  "readme": "assets/marketplace/MARKETPLACE.md",
+  "readme": "assets/MARKETPLACE.md",
   "pricing": "Free",
   "activationEvents": [],
   "main": "./out/extension.js",
