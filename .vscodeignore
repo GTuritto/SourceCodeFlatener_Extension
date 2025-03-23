@@ -27,3 +27,6 @@ test_project/**
 test_flattener.js
 images/create_icon.js
 images/icon.svg
+
+# Trunk files
+.trunk/**

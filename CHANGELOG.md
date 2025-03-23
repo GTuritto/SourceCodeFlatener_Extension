@@ -9,6 +9,7 @@ All notable changes to the "CodeFlattener" extension will be documented in this 
 - Updated extension name to consistently use "CodeFlattener" across all files
 - Removed redundant VERSION file to maintain single source of truth in package.json
 - Various documentation improvements
+- Lowered minimum VS Code version requirement to 1.86.0 for broader compatibility
 
 ## [1.5.1] - 2025-03-21
 
