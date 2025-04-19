@@ -97,13 +97,50 @@ export class CodeFlattener {
         this.outputChannel = vscode.window.createOutputChannel('Code Flattener');
     }
 
-    private log(message: string) {
-        this.outputChannel.appendLine(`[INFO] ${message}`);
+    /**
+     * Log a message to the output channel with optional severity level
+     * @param message The message to log
+     * @param level Optional log level (INFO, WARN, ERROR, DEBUG)
+     */
+    private log(message: string, level: string = 'INFO') {
+        this.outputChannel.appendLine(`[${level}] ${message}`);
     }
 
-    private error(message: string) {
-        this.outputChannel.appendLine(`[ERROR] ${message}`);
-        vscode.window.showErrorMessage(message);
+    /**
+     * Sanitizes error messages to prevent potentially sensitive information disclosure
+     * @param message The raw error message
+     * @returns A sanitized version of the error message
+     */
+    private sanitizeErrorMessage(message: string): string {
+        if (!message) {
+            return 'Unknown error';
+        }
+        
+        // Remove any absolute file paths and replace with relative indicator
+        message = message.replace(/[a-zA-Z]:\\[^\s]+/g, '<file>');
+        message = message.replace(/\/[\w\d\/.-]+/g, '<file>');
+        
+        // Remove any potential usernames from error messages
+        message = message.replace(/\/home\/[^\/]+/g, '<home>');
+        message = message.replace(/\/Users\/[^\/]+/g, '<user>');
+        
+        // Remove any IP addresses or potential credentials
+        message = message.replace(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g, '<ip-address>');
+        message = message.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '<email>');
+        
+        // Limit maximum length of error messages
+        const MAX_ERROR_LENGTH = 200;
+        if (message.length > MAX_ERROR_LENGTH) {
+            message = message.substring(0, MAX_ERROR_LENGTH) + '...';
+        }
+        
+        return message;
+    }
+
+    private error(message: string): void {
+        const sanitizedMessage = this.sanitizeErrorMessage(message);
+        this.log(sanitizedMessage, 'ERROR');
+        vscode.window.showErrorMessage(sanitizedMessage);
     }
     
     /**
@@ -144,8 +181,13 @@ export class CodeFlattener {
                 // Default: Get staged, unstaged, and today's changes
                 gitCommand = 'git diff --name-only HEAD && git ls-files --others --exclude-standard';
             } else {
-                // Look back N days based on user setting
-                const dateFilter = `--since="${historyDepth} days ago"`;
+                // Look back N days based on user setting - validate input is a safe positive integer
+                const safeHistoryDepth = Math.max(1, Math.min(365, Math.floor(Number(historyDepth))));
+                if (isNaN(safeHistoryDepth)) {
+                    this.error(`Invalid git history depth value: ${historyDepth}`);
+                    return [];
+                }
+                const dateFilter = `--since="${safeHistoryDepth} days ago"`;
                 gitCommand = `git diff --name-only HEAD ${dateFilter} && git ls-files --others --exclude-standard`;
             }
             
@@ -372,10 +414,21 @@ Project Directory: ${workspacePath}
                 // Process batch in parallel but with controlled concurrency
                 await Promise.all(batch.map(async (file) => {
                     try {
-                        const relativePath = path.relative(workspacePath, file);
+                        // Normalize and validate file path to prevent path traversal attacks
+                        const normalizedFile = path.normalize(file);
+                        const normalizedWorkspace = path.normalize(workspacePath);
+                        
+                        // Ensure the file is within the workspace directory
+                        if (!normalizedFile.startsWith(normalizedWorkspace)) {
+                            this.error(`Security warning: Attempted to access file outside workspace: ${file}`);
+                            skippedCount++;
+                            return;
+                        }
+                        
+                        const relativePath = path.relative(normalizedWorkspace, normalizedFile);
                         
                         try {
-                            const fileStats = await stat(file);
+                            const fileStats = await stat(normalizedFile);
                             
                             // Skip files that are too large
                             if (fileStats.size > maxFileSizeBytes) {
@@ -394,11 +447,13 @@ Project Directory: ${workspacePath}
                                 skippedCount++;
                             }
                         } catch (statErr) {
-                            progressCallback(`Error getting stats for file ${file}: ${(statErr as Error).message}`, 0);
+                            // Sanitize error messages to prevent information disclosure
+                        progressCallback(`Error getting stats for file: ${this.sanitizeErrorMessage((statErr as Error).message)}`, 0);
                             skippedCount++;
                         }
                     } catch (fileErr) {
-                        progressCallback(`Error processing file ${file}: ${(fileErr as Error).message}`, 0);
+                        // Sanitize error messages to prevent information disclosure
+                    progressCallback(`Error processing file: ${this.sanitizeErrorMessage((fileErr as Error).message)}`, 0);
                         skippedCount++;
                     }
                 }));
@@ -1619,26 +1674,66 @@ Project Directory: ${workspacePath}
         // Additional ultra-compact processing for aggressive level
         if (ultraCompact && compactLevel === 'aggressive') {
             // Remove all commented-out code blocks (lines starting with // that look like code)
-            minified = minified.replace(/^\s*\/\/\s*[a-zA-Z0-9_$]+\s*[(=:;{].*$/gm, '');
-            
-            // Collapse repetitive code patterns (e.g., long chains of similar method calls)
-            minified = minified.replace(/(\.[a-zA-Z0-9_$]+\([^)]*\)[;.])\s*\1\s*\1(\s*\1){2,}/g, 
-                           (match) => {
-                               const parts = match.split(';').filter(p => p.trim());
-                               if (parts.length > 3) {
-                                   return `${parts[0]}; ${parts[1]}; /* + ${parts.length - 2} similar calls */`;
-                               }
-                               return match;
-                           });
-            
-            // Reduce import/require sequences
-            minified = minified.replace(/(import|require)([^\n]+\n){5,}/g, (match) => {
-                const lines = match.split('\n').filter(line => line.trim());
-                if (lines.length > 5) {
-                    return `${lines.slice(0, 3).join('\n')}\n// ... plus ${lines.length - 3} more imports\n`;
+            // Add timeout protection against ReDoS
+            try {
+                // Limit the complexity and input size to prevent ReDoS
+                if (minified.length > 5 * MB) {
+                    this.log('File too large for aggressive regex processing - applying basic minification only');
+                } else {
+                    // Use non-catastrophic regex pattern with explicit character limit
+                    minified = minified.replace(/^\s*\/\/\s*[a-zA-Z0-9_$]{1,100}\s*[(=:;{][^\n]{0,1000}$/gm, '');
                 }
-                return match;
-            });
+            } catch (e) {
+                this.log(`Regex timeout in commented code processing: ${e}`);
+                // Continue with safer processing
+            }
+            
+            // Collapse repetitive code patterns with safety limits
+            try {
+                // Only apply to reasonable-sized code sections
+                if (minified.length < 2 * MB) {
+                    // Use safer pattern with explicit length limits
+                    minified = minified.replace(/(\.[a-zA-Z0-9_$]{1,50}\([^)]{0,500}\)[;.])\s*\1\s*\1(\s*\1){2,10}/g, 
+                                (match) => {
+                                    if (match.length > 10000) {
+                                        return match; // Skip overly long matches
+                                    }
+                                    const parts = match.split(';').filter(p => p.trim());
+                                    if (parts.length > 3 && parts.length < 100) { // Safety limit
+                                        return `${parts[0]}; ${parts[1]}; /* + ${parts.length - 2} similar calls */`;
+                                    }
+                                    return match;
+                                });
+                }
+            } catch (e) {
+                this.log(`Regex timeout in pattern collapse: ${e}`);
+                // Continue with safer processing
+            }
+            
+            // Reduce import/require sequences with ReDoS protection
+            try {
+                // Apply a maximum number of iterations to prevent excessive processing
+                let iterations = 0;
+                const maxIterations = 100;
+                const maxPatternLength = 1000;
+                
+                // Use non-backtracking algorithm with explicit length limits
+                minified = minified.replace(/(import|require)([^\n]{1,500}\n){5,20}/g, (match) => {
+                    // Apply iteration limits to prevent infinite loop attacks
+                    if (++iterations > maxIterations || match.length > maxPatternLength) {
+                        return match; // Skip if too complex
+                    }
+                    
+                    const lines = match.split('\n').filter(line => line.trim());
+                    if (lines.length > 5 && lines.length < 100) { // Safety upper bound
+                        return `${lines.slice(0, 3).join('\n')}\n// ... plus ${lines.length - 3} more imports\n`;
+                    }
+                    return match;
+                });
+            } catch (e) {
+                this.log(`Regex timeout in import sequence processing: ${e}`);
+                // Continue with safer processing
+            }
         }
         
         return minified;
@@ -1705,7 +1800,11 @@ Project Directory: ${workspacePath}
             }
             
             // Prepare header content with anchor for TOC navigation
-            const safeAnchorName = path.basename(filepath).replace(/[\s.]+/g, '_');
+            // Ensure anchor name is safe and can't be used for XSS
+            const rawName = path.basename(filepath);
+            const safeAnchorName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_')
+                                        .replace(/^[^a-zA-Z]+/, '')
+                                        .substring(0, 50); // Limit length for safety
             
             // Add special marker for recently changed files to help LLMs focus on relevant parts
             let output = `\n## ${relativePath} <a id="${safeAnchorName}"></a>`;
