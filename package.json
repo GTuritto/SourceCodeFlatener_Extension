@@ -39,13 +39,19 @@
       "explorer/context": [
         {
           "command": "code-flattener.flattenFromExplorer",
-          "group": "navigation"
+          "group": "9_flatten",
+          "when": "explorerResourceIsFolder"
         }
       ]
     },
     "configuration": {
       "title": "CodeFlattener",
       "properties": {
+        "codeFlattener.respectFlattenignore": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether to respect .flattenignore files when flattening code"
+        },
         "codeFlattener.outputFolder": {
           "type": "string",
           "default": "CodeFlattened_Output",

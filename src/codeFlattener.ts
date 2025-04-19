@@ -141,6 +141,13 @@ export class CodeFlattener {
                 gitignorePatterns = await this.readGitignorePatterns(workspacePath);
             }
 
+            // Read .flattenignore patterns
+            const config = vscode.workspace.getConfiguration('codeFlattener');
+            const respectFlattenignore = config.get<boolean>('respectFlattenignore', true);
+            const flattenignorePatterns = respectFlattenignore
+                ? await this.readFlattenignorePatterns(workspacePath)
+                : [];
+            
             // Set output file variables
             this.projectName = path.basename(workspacePath);
             const outputFilePath = path.join(outputFolderPath, `${this.projectName}_flattened.md`);
@@ -204,7 +211,7 @@ Project Directory: ${workspacePath}
                 // Filter files based on exclude patterns and gitignore
                 files = files.filter(file => {
                     const relativePath = path.relative(workspacePath, file);
-                    return !this.shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns);
+                    return !this.shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns, flattenignorePatterns);
                 });
                 
                 // If prioritization is enabled, sort files by importance
@@ -417,7 +424,7 @@ Project Directory: ${workspacePath}
     /**
      * Determines if a file should be ignored based on its path and patterns
      */
-    private shouldIgnore(relativePath: string, includePatterns: string[], excludePatterns: string[], gitignorePatterns: string[] = []): boolean {
+    private shouldIgnore(relativePath: string, includePatterns: string[], excludePatterns: string[], gitignorePatterns: string[] = [], flattenignorePatterns: string[] = []): boolean {
         // Always normalize the path for consistent matching
         const normalizedPath = relativePath.replace(/\\/g, '/');
         
@@ -567,6 +574,16 @@ Project Directory: ${workspacePath}
             }
         }
 
+        // Check if path matches any .flattenignore pattern
+        if (flattenignorePatterns.length > 0) {
+            for (const pattern of flattenignorePatterns) {
+                if (this.matchGlobPattern(normalizedPath, pattern)) {
+                    console.log(`Excluding via .flattenignore pattern '${pattern}': ${normalizedPath}`);
+                    return true;
+                }
+            }
+        }
+
         return false;
     }
 
@@ -629,6 +646,27 @@ Project Directory: ${workspacePath}
             console.error('Error reading .gitignore:', error);
             return patterns;
         }
+    }
+    
+    /**
+     * Read and parse .flattenignore file
+     * @param projectPath Path to the project root containing .flattenignore
+     * @returns Array of ignore patterns
+     */
+    private async readFlattenignorePatterns(projectPath: string): Promise<string[]> {
+        const flattenignorePath = path.join(projectPath, '.flattenignore');
+        try {
+            if (fs.existsSync(flattenignorePath)) {
+                const content = await readFile(flattenignorePath, 'utf-8');
+                return content
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'));
+            }
+        } catch (err) {
+            console.warn(`Error reading .flattenignore: ${err}`);
+        }
+        return [];
     }
     
     /**
@@ -852,7 +890,6 @@ Project Directory: ${workspacePath}
         // Skip files that will be automatically generated or don't provide value
         const lowValueFiles = [
             'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'composer.lock', 'Gemfile.lock',
-            'Cargo.lock', 'poetry.lock', 'packages.lock.json', 'project.assets.json', 'paket.lock',
             '.eslintrc', '.prettierrc', '.editorconfig', '.babelrc', '.stylelintrc', '.browserslistrc',
             '.ds_store', 'thumbs.db', '.gitkeep', 
             'error.log', 'access.log', 'debug.log', 'npm-debug.log', 'yarn-debug.log', 'yarn-error.log'
@@ -1903,8 +1940,9 @@ Estimated tokens: ${approxTokens}${durationStr}
             'vite.config.js', 'vite.config.ts', 'webpack.config.js', 'rollup.config.js',
             'next.config.js', 'nuxt.config.js', 'svelte.config.js',
             'Dockerfile', 'docker-compose.yml', 'docker-compose.yaml',
-            '.env', '.env.local', '.env.development', '.env.production',
-            'Makefile', 'CMakeLists.txt', 'pom.xml', 'build.gradle', 'build.xml'
+            '.env', 'Makefile', 'CMakeLists.txt', 'pom.xml', 'build.gradle',
+            'requirements.txt', 'setup.py', 'pyproject.toml',
+            'go.mod', 'Cargo.toml', 'gemfile', 'composer.json'
         ].includes(fileName) || [
             '.json', '.toml', '.yaml', '.yml', '.ini', '.conf', '.config'
         ].includes(ext)) {
@@ -2396,7 +2434,3 @@ Estimated tokens: ${approxTokens}${durationStr}
         return diagram;
     }
 }
-
-
-
-
