@@ -3,7 +3,8 @@ const fs = require('fs');
 const { promisify } = require('util');
 
 // Import our compiled CodeFlattener class
-const { CodeFlattener } = require('../out/codeFlattener');
+// The module can't be loaded directly due to VSCode API dependencies
+// Our mock_semantic_test.js provides targeted tests for the semantic compression feature
 
 // Promisify fs functions
 const rmdir = promisify(fs.rm);
@@ -119,6 +120,70 @@ class LLMFeaturesTestRunner {
     console.log('Test environment prepared successfully');
   }
 
+  async generateTestFiles(workspacePath) {
+    const srcDir = path.join(workspacePath, 'src');
+    if (!fs.existsSync(srcDir)) {
+      await mkdir(srcDir, { recursive: true });
+    }
+    
+    // Create a file with sample comments for semantic compression testing
+    const semanticTestFile = path.join(srcDir, 'semantic_compression_test.js');
+    const commentContent = `
+// This file tests semantic compression with different levels of compression
+
+/**
+ * This is an important function that should be preserved in all compression levels
+ * @param {string} input - The input string to process
+ * @returns {string} - The processed output
+ */
+function importantFunction(input) {
+    return input.toUpperCase();
+}
+
+// This is a standard comment that might be compressed in aggressive mode
+// It's not particularly important but provides some context
+// It spans multiple lines to test line handling
+function regularFunction() {
+    // TODO: Implement this function
+    return null;
+}
+
+// FIXME: This comment should be preserved due to the FIXME keyword
+function buggyFunction() {
+    // This implementation has issues
+    return undefined;
+}
+
+/* 
+ * This is a multi-line comment with some repeated content
+ * This is a multi-line comment with some repeated content
+ * This is a multi-line comment with some repeated content
+ * This is a multi-line comment with some repeated content
+ * This is a multi-line comment with some repeated content
+ */
+function repeatedCommentFunction() {
+    return true;
+}
+
+// Copyright notice that should always be preserved
+// (c) 2025 Test Company. All rights reserved.
+
+// A series of similar comments to test similarity detection
+// Debug: Level 1 processing started
+// Debug: Level 2 processing started
+// Debug: Level 3 processing started
+// Debug: Level 4 processing started
+// Debug: Level 5 processing started
+// Debug: Level 6 processing started
+// Debug: Level 7 processing started
+// Debug: Level 8 processing started
+// Debug: Level 9 processing started
+// Debug: Level 10 processing started
+`;
+    
+    await writeFile(semanticTestFile, commentContent);
+  }
+
   /**
    * Run a single test case
    * @param {Object} testCase The test case configuration
@@ -133,6 +198,7 @@ class LLMFeaturesTestRunner {
     
     // Prepare test environment
     await this.prepareTestEnvironment(workspacePath);
+    await this.generateTestFiles(workspacePath);
     
     // Clean previous output if needed
     if (testCase.cleanOutput && fs.existsSync(outputFolderPath)) {
@@ -570,25 +636,98 @@ class LLMFeaturesTestRunner {
  * Main function to run all LLM feature tests
  */
 async function runLLMFeatureTests() {
-  const tester = new LLMFeaturesTestRunner();
+  console.log('\n===== Running LLM Features Tests =====');
+  const testRunner = new LLMFeaturesTestRunner();
   
-  // Test .env exclusion
-  tester.addTest('Env File Exclusion', {
-    cleanOutput: true,
-    verbose: true,
-    validateEnvExclusion: true,
-    outputFolder: 'CodeFlattened_Tests/env_exclusion',
-    llmOptions: {
-      respectGitignore: false,
-      enableSemanticCompression: true,
-      enhancedTableOfContents: false,
-      prioritizeImportantFiles: false,
-      visualizationLevel: 'basic'
-    }
-  });
+  // Base workspace path for all tests
+  const workspacePath = path.join(__dirname, 'llm_test_project');
+  
+  // Create test environment with files
+  await testRunner.prepareTestEnvironment(workspacePath);
+  await testRunner.generateTestFiles(workspacePath);
+  
+  // Add specific test for semantic compression levels (new in v1.6.2)
+  testRunner
+    .addTest('Semantic Compression - Minimal Level', {
+      workspacePath,
+      outputFolder: 'Output_Minimal_Compression',
+      minifyOutput: true,
+      ultraCompactMode: true,
+      compactModeLevel: 'minimal',
+      llmOptions: {
+        enableTOC: true,
+        enableSemanticCompression: true,
+        highlightGitChanges: false
+      },
+      validateFunction: async (outputPath) => {
+        const outputFile = path.join(outputPath, 'flattened_code.md');
+        const content = await readFile(outputFile, 'utf8');
+        return {
+          success: content.includes('This is an important function'),
+          message: 'Minimal compression preserves important comments'
+        };
+      }
+    })
+    .addTest('Semantic Compression - Moderate Level', {
+      workspacePath,
+      outputFolder: 'Output_Moderate_Compression',
+      minifyOutput: true,
+      ultraCompactMode: true,
+      compactModeLevel: 'moderate',
+      llmOptions: {
+        enableTOC: true,
+        enableSemanticCompression: true,
+        highlightGitChanges: false
+      },
+      validateFunction: async (outputPath) => {
+        const outputFile = path.join(outputPath, 'flattened_code.md');
+        const content = await readFile(outputFile, 'utf8');
+        return {
+          success: content.includes('@param') && content.includes('TODO:'),
+          message: 'Moderate compression preserves JSDoc and TODO comments'
+        };
+      }
+    })
+    .addTest('Semantic Compression - Aggressive Level', {
+      workspacePath,
+      outputFolder: 'Output_Aggressive_Compression',
+      minifyOutput: true,
+      ultraCompactMode: true,
+      compactModeLevel: 'aggressive',
+      llmOptions: {
+        enableTOC: true,
+        enableSemanticCompression: true,
+        highlightGitChanges: false
+      },
+      validateFunction: async (outputPath) => {
+        const outputFile = path.join(outputPath, 'flattened_code.md');
+        const content = await readFile(outputFile, 'utf8');
+        // Aggressive should compress repetitive comments but preserve copyright and fixme
+        return {
+          success: content.includes('Copyright') && content.includes('FIXME:') && 
+                 content.includes('plus') && content.length < 3000,
+          message: 'Aggressive compression preserves critical comments but reduces size'
+        };
+      }
+    })
+  
+  testRunner
+    .addTest('Env File Exclusion', {
+      cleanOutput: true,
+      verbose: true,
+      validateEnvExclusion: true,
+      outputFolder: 'CodeFlattened_Tests/env_exclusion',
+      llmOptions: {
+        respectGitignore: false,
+        enableSemanticCompression: true,
+        enhancedTableOfContents: false,
+        prioritizeImportantFiles: false,
+        visualizationLevel: 'basic'
+      }
+    })
   
   // Test .gitignore support
-  tester.addTest('Gitignore Support', {
+  testRunner.addTest('Gitignore Support', {
     cleanOutput: true,
     verbose: true,
     validateGitignore: true,
@@ -603,7 +742,7 @@ async function runLLMFeatureTests() {
   });
   
   // Test enhanced table of contents
-  tester.addTest('Enhanced TOC', {
+  testRunner.addTest('Enhanced TOC', {
     cleanOutput: true,
     verbose: true,
     validateEnhancedTOC: true,
@@ -618,7 +757,7 @@ async function runLLMFeatureTests() {
   });
   
   // Test visualization levels
-  tester.addTest('Comprehensive Visualization', {
+  testRunner.addTest('Comprehensive Visualization', {
     cleanOutput: true,
     verbose: true,
     validateVisualization: true,
@@ -633,7 +772,7 @@ async function runLLMFeatureTests() {
   });
   
   // Test runtime exclusions
-  tester.addTest('Runtime Exclusions', {
+  testRunner.addTest('Runtime Exclusions', {
     cleanOutput: true,
     verbose: true,
     validateRuntimeExclusions: true,
@@ -649,7 +788,7 @@ async function runLLMFeatureTests() {
   });
   
   // Test all features together
-  tester.addTest('All Features Combined', {
+  testRunner.addTest('All Features Combined', {
     cleanOutput: true,
     verbose: true,
     validateEnvExclusion: true,
@@ -669,7 +808,7 @@ async function runLLMFeatureTests() {
   });
   
   // Edge case: Empty exclude patterns to test default behavior
-  tester.addTest('Empty Exclude Patterns', {
+  testRunner.addTest('Empty Exclude Patterns', {
     cleanOutput: true,
     verbose: true,
     validateEmptyExclusions: true,
@@ -685,7 +824,7 @@ async function runLLMFeatureTests() {
   });
   
   // Edge case: Complex glob patterns
-  tester.addTest('Complex Glob Patterns', {
+  testRunner.addTest('Complex Glob Patterns', {
     cleanOutput: true,
     verbose: true,
     validateComplexPatterns: true,
@@ -707,7 +846,7 @@ async function runLLMFeatureTests() {
   });
   
   // Edge case: Very small file size limit
-  tester.addTest('Large Files Exclusion', {
+  testRunner.addTest('Large Files Exclusion', {
     cleanOutput: true,
     verbose: true,
     validateLargeFileExclusion: true,
@@ -724,7 +863,7 @@ async function runLLMFeatureTests() {
   });
   
   // Edge case: Include/exclude pattern conflicts
-  tester.addTest('Include-Exclude Conflict', {
+  testRunner.addTest('Include-Exclude Conflict', {
     cleanOutput: true,
     verbose: true,
     validatePatternConflict: true,
@@ -741,7 +880,7 @@ async function runLLMFeatureTests() {
   });
   
   // Edge case: Nested directory patterns
-  tester.addTest('Nested Directory Patterns', {
+  testRunner.addTest('Nested Directory Patterns', {
     cleanOutput: true,
     verbose: true,
     validateNestedPatterns: true,
@@ -757,7 +896,7 @@ async function runLLMFeatureTests() {
   });
   
   // Edge case: Special characters in paths
-  tester.addTest('Special Characters', {
+  testRunner.addTest('Special Characters', {
     cleanOutput: true,
     verbose: true,
     validateSpecialChars: true,
@@ -773,7 +912,7 @@ async function runLLMFeatureTests() {
   });
   
   // Run all tests
-  return await tester.runAllTests();
+  return await testRunner.runAllTests();
 }
 
 // Run the tests if this file is executed directly
