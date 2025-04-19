@@ -1,14 +1,32 @@
-# CodeFlattener
+# CodeFlattener: Source Code to Markdown Transformer
 
 [![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
+> **Convert multi-file projects into structured single documents for AI tools, code reviews, and documentation**
+
 ## Unlock the Full Potential of Your Codebase with One Click
 
 ### A Practical Solution for AI-Assisted Development, Code Reviews, and Project Sharing
 
-CodeFlattener transforms your multi-file project into a structured, dependency-aware markdown document. It solves common challenges with limited context in AI assistants and disjointed code reviews by delivering your codebase as a single, organized document that preserves relationships between files.
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Latest Improvements](#latest-improvements-v161)
+- [Settings](#streamlined-settings)
+- [How to Use](#usage)
+- [AI Assistant Integration](#perfect-for-ai-assistants)
+- [Supported Languages](#supported-languages)
+- [Benefits](#key-benefits)
+- [Use Cases](#use-cases)
+- [Detailed Usage Guide](#how-to-use-codeflattener)
+- [Get Started](#get-started-today)
+
+## Overview
+
+CodeFlattener transforms your multi-file project into a structured, dependency-aware markdown document. It solves common challenges with limited context in AI assistants and disjointed code reviews by delivering your codebase as a single, organized document that preserves relationships between files. Perfect for LLMs like ChatGPT, Claude, and Copilot, it helps AI tools understand your entire code structure.
 
 ## Key Features
 
@@ -48,14 +66,18 @@ CodeFlattener transforms your multi-file project into a structured, dependency-a
 
 ## Streamlined Settings
 
-CodeFlattener now features a simplified settings interface, focusing on what matters most:
+CodeFlattener features a simplified settings interface, focusing on what matters most:
 
-- **Output Folder**: Where your flattened code will be saved (default: "CodeFlattened_Output")
-- **Max File Size**: Control the maximum size of files to process (default: 10MB)
-- **Max Output Size**: Set the maximum size before splitting output files (default: 5MB)
-- **Prioritize Important Files**: List the most critical files first for better context (default: on)
-- **Add Code Relationship Diagrams**: Include Mermaid visualizations of code structure (default: on)
-- **Respect Flattenignore**: Enable or disable .flattenignore file support (default: on)
+| Setting | Description | Default |
+|---------|-------------|--------|
+| **Output Folder** | Where your flattened code will be saved | "CodeFlattened_Output" |
+| **Max File Size** | Control the maximum size of files to process | 10MB |
+| **Max Output Size** | Set the maximum size before splitting output files | 5MB |
+| **Prioritize Important Files** | List the most critical files first for better context | Enabled |
+| **Add Code Relationship Diagrams** | Include Mermaid visualizations of code structure | Enabled |
+| **Respect Flattenignore** | Enable or disable .flattenignore file support | Enabled |
+| **Ultra-Compact Mode** | Apply token optimization compression | Minimal |
+| **Git Change Detection** | Highlight recently modified files | Emoji Style |
 
 ## Usage
 
@@ -146,6 +168,19 @@ The extension generates comprehensive markdown files that include:
 
 ---
 
-**If you find this extension helpful, please [leave a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)!**
+## Get Started Today
 
-[VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener) | [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details) | [Q&A](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#qna) | **Contact: <giuseppe@turitto.net> (limited support)**
+Install CodeFlattener from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener) and transform how you work with code and AI tools.
+
+**If this extension helps your development workflow, please [leave a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)!**
+
+### Useful Links
+
+- [GitHub Repository](https://github.com/GTuritto/SourceCodeFlatener_Extension)
+- [Report Issues](https://github.com/GTuritto/SourceCodeFlatener_Extension/issues)
+- [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)
+- [Q&A Forum](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#qna)
+
+**Contact**: <giuseppe@turitto.net> (limited support)
+
+**Keywords**: code flattener, source code, AI assistant, LLM optimization, ChatGPT, Claude, token optimization, code dependency, project visualization, code relationship diagram, code structure, code documentation, code review, VS Code extension, Mermaid diagrams, code compression, git integration

@@ -1,210 +1,186 @@
-# Code Flattener
+# CodeFlattener: Source Code to Markdown Transformer
 
-[![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases/code-flattener-1.6.1.vsix)
+[![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
+> **Convert multi-file projects into structured single documents for AI tools, code reviews, and documentation**
+
+## Unlock the Full Potential of Your Codebase with One Click
+
+### A Practical Solution for AI-Assisted Development, Code Reviews, and Project Sharing
+
+## Table of Contents
+
+- [Overview](#overview)
+- [Key Features](#key-features)
+- [Latest Improvements](#latest-improvements-v161)
+- [Settings](#streamlined-settings)
+- [How to Use](#usage)
+- [AI Assistant Integration](#perfect-for-ai-assistants)
+- [Supported Languages](#supported-languages)
+- [Benefits](#key-benefits)
+- [Use Cases](#use-cases)
+- [Detailed Usage Guide](#how-to-use-codeflattener)
+- [Get Started](#get-started-today)
+
 ## Overview
 
-Code Flattener is a VS Code extension that transforms multi-file projects into structured, dependency-aware markdown documents. It solves common challenges with limited context in AI assistants and disjointed code reviews by delivering codebases as navigable, organized documents that preserve relationships between files.
-
-![Code Flattener Demo](assets/icon/Flattener.png)
+CodeFlattener transforms your multi-file project into a structured, dependency-aware markdown document. It solves common challenges with limited context in AI assistants and disjointed code reviews by delivering your codebase as a single, organized document that preserves relationships between files. Perfect for LLMs like ChatGPT, Claude, and Copilot, it helps AI tools understand your entire code structure.
 
 ## Key Features
 
 - **Consolidated Output**: Creates a single comprehensive file (split only if necessary for size)
 - **Dependency Tracking**: Automatically detects and visualizes dependencies between files
-- **Mermaid Diagrams**: Adds visual dependency graphs for clearer understanding
-- **Git Change Detection**: Highlights recently modified files to focus LLM attention on active code
+- **Mermaid Diagrams**: Optional visual diagrams for clearer understanding of code relationships
 - **Broad Language Support**: Works with 20+ programming languages and various file formats
-- **Syntax Highlighting**: Properly formatted code blocks for enhanced readability
-- **Customizable**: Configurable output location, file filtering via .flattenignore, and size limits
-- **Performance Optimized**: Uses parallel processing for fast execution on large codebases
+- **Plain Text Processing**: All code is treated as plain text for maximum compatibility with LLMs
+- **Enhanced Security**: Automatically excludes sensitive files and information
+- **Gitignore Support**: Respects your project's .gitignore patterns
+- **Flattenignore Support** (v1.6.1): Exclude specific files and directories via .flattenignore
+- **Important Files First**: Prioritizes key files like configuration and entry points
+- **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
+- **Explorer Integration**: Right-click in the file explorer to flatten specific directories
 
-## Installation Options
+## Latest Improvements (v1.6.1)
 
-### VS Code Marketplace (Recommended)
+### Ultra-Compact Mode
 
-Install directly from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener) for automatic updates.
+- **Maximum Token Efficiency**: New compression options to create extremely compact output files
+- **Customizable Compression**: Three intensity levels (minimal, moderate, aggressive) to match your needs
+- **Smart Processing**: Intelligent algorithms that preserve code semantics while reducing size
+- **Token Optimization**: Can reduce token usage by 30-50% for more efficient LLM interactions
 
-### Direct Download from GitHub
+### Git Change Detection for LLMs
 
-**[⬇️ Download Latest Release (v1.6.0)](https://github.com/GTuritto/SourceCodeFlatener_Extension/raw/main/releases/code-flattener-latest.vsix)**
+- **Smart Code Focus**: Automatically highlights recently modified files to focus LLM attention on actively developed code
+- **Configurable Highlighting**: Choose between emoji (🔄), text, or markdown highlighting styles
+- **Flexible History**: Set how many days back to consider changes (1-7+) to match your development cycle
+- **Priority Boosting**: Option to move changed files to the top of the output for maximum token efficiency
 
-To install from VSIX:
+### Other Enhancements
 
-1. Download the file from the link above
-2. Open VS Code
-3. Go to Extensions view (Ctrl+Shift+X)
-4. Click on the three dots (...) in the top-right corner
-5. Select "Install from VSIX..."
-6. Choose the downloaded file
+- **Flattenignore Support**: Added `.flattenignore` files to exclude specific files/directories from output
+- **Improved Error Handling**: User-friendly messages instead of console errors
+- **Enhanced VS Code Integration**: Dedicated logging output channel
+
+## Streamlined Settings
+
+CodeFlattener features a simplified settings interface, focusing on what matters most:
+
+| Setting | Description | Default |
+|---------|-------------|--------|
+| **Output Folder** | Where your flattened code will be saved | "CodeFlattened_Output" |
+| **Max File Size** | Control the maximum size of files to process | 10MB |
+| **Max Output Size** | Set the maximum size before splitting output files | 5MB |
+| **Prioritize Important Files** | List the most critical files first for better context | Enabled |
+| **Add Code Relationship Diagrams** | Include Mermaid visualizations of code structure | Enabled |
+| **Respect Flattenignore** | Enable or disable .flattenignore file support | Enabled |
+| **Ultra-Compact Mode** | Apply token optimization compression | Minimal |
+| **Git Change Detection** | Highlight recently modified files | Emoji Style |
 
 ## Usage
 
+1. Open your project in VS Code
+2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
+3. Type "Flatten Code" and select the command
+4. Review the generated markdown file in the output folder
+
+*Tip: You can also right-click on a folder in the Explorer and select "Flatten Code" from the context menu!*
+
+## Perfect for AI Assistants
+
+CodeFlattener is optimized for use with AI coding assistants like ChatGPT, Claude, and GitHub Copilot. The flattened output provides maximum context while respecting token limits, helping AI tools understand your entire project structure.
+
+### LLM Optimization Features
+
+- **Git Change Detection** - Guide AI focus to recently modified files with visual markers
+- **Priority File Ordering** - Present the most important code first for better token efficiency
+- **Relationship Visualization** - Help AI understand code structure with Mermaid diagrams
+- **Smart Filtering** - Remove irrelevant files via .gitignore and .flattenignore support
+
+The result: AI assistants that spend less time figuring out code structure and more time solving your actual coding challenges.
+
+## Supported Languages
+
+JavaScript, TypeScript, Python, Java, C#, C/C++, Go, Rust, SQL, Kotlin, Swift, PHP, Ruby, Markdown, Bash, PowerShell, Dart, R, HTML, CSS, XML, JSON, YML, TOML, Docker, and many more.
+
+## Key Benefits
+
+- **Syntax Highlighting**: Properly formatted code blocks for enhanced readability
+- **Customizable**: Configurable output location, file filtering, and size limits
+- **Performance Optimized**: Uses parallel processing for fast execution on large codebases
+
+## Why Use CodeFlattener?
+
+- **Break AI Context Barriers**: Feed your entire codebase to ChatGPT, Claude, or other AI tools with full context preservation
+- **Super-Charge Code Reviews**: Share navigable code snapshots with clear dependencies and relationships
+- **Document Architecture Instantly**: Generate project documentation that actually shows how files connect
+- **Understand New Codebases**: Flatten unfamiliar projects to grasp their structure in minutes, not days
+
+## Use Cases
+
+### For AI Development
+
+**Before**: *"Sorry, I don't have enough context about your codebase to help with that."*  
+**After**: *AI provides precise, context-aware suggestions across your entire project*
+
+### For Code Reviews
+
+**Before**: *Switching between multiple files, losing track of dependencies*  
+**After**: *A single document with clear visualization of how components interact*
+
+### For Documentation
+
+**Before**: *Outdated or non-existent project documentation*  
+**After**: *Up-to-date architectural overview generated in seconds*
+
+## How to Use CodeFlattener
+
 ### Quick Start
 
-1. Open your project folder in VS Code
+1. Open your project folder in VSCode
 2. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the command palette
 3. Type "Flatten Code" and select the command
 4. Wait while the extension processes your files (a progress indicator will be shown)
 5. Once complete, a notification will appear with the location of your flattened code
-6. Open the `CodeFlattened` folder (or your custom output folder) to view the generated markdown files
+6. Open the `CodeFlattened_Output` folder (or your custom output folder) to view the generated markdown files
 
-### Configuration Options
+### Viewing the Results
 
-In VS Code Settings (`Ctrl+,` or `Cmd+,`), search for "Code Flattener" to configure:
+The extension generates comprehensive markdown files that include:
 
-- **`codeFlattener.outputFolder`**: Name of the folder where flattened code will be saved (default: "CodeFlattened_Output")
-- **`codeFlattener.maxFileSizeBytes`**: Maximum file size in bytes for analysis (default: 10MB)
-- **`codeFlattener.maxOutputFileSizeBytes`**: Maximum output file size before rotation (default: 5MB)
-- **`codeFlattener.prioritizeImportantFiles`**: Prioritize important files in the output (default: true)
-- **`codeFlattener.addCodeRelationshipDiagrams`**: Add Mermaid diagrams showing code relationships (default: true)
-- **`codeFlattener.respectFlattenignore`**: Respect .flattenignore files for exclusions (default: true)
+- A summary section with file counts and statistics
+- A directory structure visualization to help navigate your project
+- For each file, a list of its dependencies and complete code
+- A Mermaid dependency diagram to visualize file relationships
 
-#### Ultra-Compact Mode (new in v1.6.1)
+### Customizing the Output
 
-- **`codeFlattener.ultraCompactMode`**: Enable extreme minification for maximum token efficiency (default: false)
-- **`codeFlattener.compactModeLevel`**: Compression intensity level (default: moderate)
-  - `minimal`: Light compression focusing only on comments
-  - `moderate`: Balanced compression preserving most structure
-  - `aggressive`: Maximum compression for lowest token usage
-
-#### Git Change Detection (new in v1.6.1)
-
-- **`codeFlattener.highlightGitChanges`**: Highlight recently changed files for better LLM focus (default: true)
-- **`codeFlattener.gitChangeHighlightStyle`**: Style of highlighting (emoji, text, or markdown) (default: emoji)
-- **`codeFlattener.gitChangeHistoryDepth`**: Number of days to look back for changes (default: 1)
-- **`codeFlattener.prioritizeGitChanges`**: Boost changed files to top of output (default: true)
-
-## LLM Optimization Features
-
-### Ultra-Compact Mode
-
-The Ultra-Compact Mode generates highly compressed output for the most token-efficient LLM interactions:
-
-- **Extreme Minification**: Aggressively reduces token usage while preserving code semantics
-- **Customizable Levels**: Choose from minimal, moderate, or aggressive compression
-- **Intelligent Compression**: Smart algorithms detect and condense repetitive patterns
-- **Comment Summarization**: Preserves essential documentation while reducing verbosity
-- **Size Reduction**: Can reduce output size by 30-50% compared to standard minification
-
-### Git Change Detection
-
-The Git Change Detection feature helps LLMs focus on the most relevant parts of your codebase:
-
-- **Contextual Awareness**: Clearly marks which files you're actively working on
-- **Token Efficiency**: When using prioritization, puts changed files first, saving tokens on less relevant code
-- **Focus Guidance**: Visual markers help guide LLM attention to code that matters most
-- **Configurable Depth**: Look back 1-7+ days to match your development cycle
-- **Visual Customization**: Choose from emoji (🔄), text, or markdown highlighting styles
-
-### How It Works
-
-1. Automatically detects if your project uses Git
-2. Identifies recently changed files based on your history depth setting
-3. Marks these files with your preferred highlighting style
-4. Optionally prioritizes changed files at the top of the flattened output
-
-This feature combines perfectly with the Mermaid diagram visualizations, making it easier for AI assistants to understand both your code architecture and your active development focus.
-
-## Supported Languages
-
-Code Flattener works with most popular programming languages and file formats:
-
-- **Programming**: JavaScript, TypeScript, Python, Java, C/C++, C#, Go, Ruby, PHP, Rust, Swift, Kotlin, Dart, and more
-- **Web**: HTML, CSS, SCSS, LESS, SVG
-- **Configuration**: JSON, YAML, TOML, XML, INI
-- **Infrastructure**: Terraform, Docker, Kubernetes
-- **Documentation**: Markdown, RST, TXT
-
-## Dependency Detection
-
-The extension automatically detects dependencies between files for all major languages including:
-
-- **JavaScript/TypeScript**: ES6 imports, CommonJS requires, dynamic imports
-- **Python**: import statements and from-import statements
-- **Java**: package imports
-- **C#**: using directives
-- **C/C++**: #include statements
-- **Go**: import statements
-- **And many more**: PHP, Ruby, Rust, Swift, Kotlin, Dart, Elixir, Erlang, etc.
-
-## Troubleshooting
-
-### Command Not Found Error
-
-If you encounter an error that the command `code-flattner.flattenCode` is not found, please note the correct command ID is `code-flattener.flattenCode` (with an 'e' between 't' and 'n').
-
-The recommended way to use the extension is through the Command Palette:
-
-1. Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS)
-2. Type "Flatten Code" (not the full command ID)
-3. Select the command from the dropdown
-
-If you're calling the command programmatically, make sure to use the correct ID: `code-flattener.flattenCode`
-
-### Other Common Issues
-
-- **Processing takes too long**: Try excluding non-essential directories using the exclude patterns
-- **Output file is too large**: Adjust the `maxOutputFileSizeBytes` setting
-- **Missing important files**: Check your include/exclude patterns
-- **Memory issues**: Increase the `maxFileSizeBytes` setting for very large codebases
-
-## Development
-
-### Setup
-
-1. Clone the repository:
-  
-   ```bash
-   git clone https://github.com/GTuritto/SourceCodeFlatener_Extension.git
-   cd SourceCodeFlatener_Extension
-   ```
-
-2. Install dependencies:
-  
-   ```bash
-   npm install
-   ```
-
-3. Open in VS Code:
-  
-   ```bash
-   code .
-   ```
-
-### Build and Run
-
-- **Compile**: `npm run compile`
-- **Watch for changes**: `npm run watch`
-- **Lint**: `npm run lint`
-- **Test**: `npm run test`
-
-### Debug
-
-1. Press F5 in VS Code to start debugging
-2. This will open a new VS Code window with the extension loaded
-3. Use the "Flatten Code" command to test the extension
-
-### Packaging
-
-```bash
-npx vsce package
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## License
-
-Distributed under the MIT License. See `LICENSE` for more information.
+1. Go to VS Code Settings (`Ctrl+,` or `Cmd+,`)
+2. Search for "CodeFlattener"
+3. Modify any of the following settings:
+   - Change the output folder name (default: "CodeFlattened_Output")
+   - Adjust maximum file size limits (default: 10MB)
+   - Set output file size for splitting large codebases (default: 5MB)
+   - Enable/disable prioritization of important files (default: enabled)
+   - Enable/disable code relationship diagrams (default: enabled)
 
 ---
 
-**⭐ If you find this extension helpful, please consider [leaving a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)! ⭐**
+## Get Started Today
+
+Install CodeFlattener from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener) and transform how you work with code and AI tools.
+
+**If this extension helps your development workflow, please [leave a review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)!**
+
+### Useful Links
+
+- [GitHub Repository](https://github.com/GTuritto/SourceCodeFlatener_Extension)
+- [Report Issues](https://github.com/GTuritto/SourceCodeFlatener_Extension/issues)
+- [Rate & Review](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#review-details)
+- [Q&A Forum](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener&ssr=false#qna)
+
+**Contact**: <giuseppe@turitto.net> (limited support)
+
+**Keywords**: code flattener, source code, AI assistant, LLM optimization, ChatGPT, Claude, token optimization, code dependency, project visualization, code relationship diagram, code structure, code documentation, code review, VS Code extension, Mermaid diagrams, code compression, git integration
