@@ -15,6 +15,7 @@ Code Flattener is a VS Code extension that transforms multi-file projects into s
 - **Consolidated Output**: Creates a single comprehensive file (split only if necessary for size)
 - **Dependency Tracking**: Automatically detects and visualizes dependencies between files
 - **Mermaid Diagrams**: Adds visual dependency graphs for clearer understanding
+- **Git Change Detection**: Highlights recently modified files to focus LLM attention on active code
 - **Broad Language Support**: Works with 20+ programming languages and various file formats
 - **Syntax Highlighting**: Properly formatted code blocks for enhanced readability
 - **Customizable**: Configurable output location, file filtering via .flattenignore, and size limits
@@ -59,6 +60,53 @@ In VS Code Settings (`Ctrl+,` or `Cmd+,`), search for "Code Flattener" to config
 - **`codeFlattener.maxOutputFileSizeBytes`**: Maximum output file size before rotation (default: 5MB)
 - **`codeFlattener.prioritizeImportantFiles`**: Prioritize important files in the output (default: true)
 - **`codeFlattener.addCodeRelationshipDiagrams`**: Add Mermaid diagrams showing code relationships (default: true)
+- **`codeFlattener.respectFlattenignore`**: Respect .flattenignore files for exclusions (default: true)
+
+#### Ultra-Compact Mode (new in v1.6.1)
+
+- **`codeFlattener.ultraCompactMode`**: Enable extreme minification for maximum token efficiency (default: false)
+- **`codeFlattener.compactModeLevel`**: Compression intensity level (default: moderate)
+  - `minimal`: Light compression focusing only on comments
+  - `moderate`: Balanced compression preserving most structure
+  - `aggressive`: Maximum compression for lowest token usage
+
+#### Git Change Detection (new in v1.6.1)
+
+- **`codeFlattener.highlightGitChanges`**: Highlight recently changed files for better LLM focus (default: true)
+- **`codeFlattener.gitChangeHighlightStyle`**: Style of highlighting (emoji, text, or markdown) (default: emoji)
+- **`codeFlattener.gitChangeHistoryDepth`**: Number of days to look back for changes (default: 1)
+- **`codeFlattener.prioritizeGitChanges`**: Boost changed files to top of output (default: true)
+
+## LLM Optimization Features
+
+### Ultra-Compact Mode
+
+The Ultra-Compact Mode generates highly compressed output for the most token-efficient LLM interactions:
+
+- **Extreme Minification**: Aggressively reduces token usage while preserving code semantics
+- **Customizable Levels**: Choose from minimal, moderate, or aggressive compression
+- **Intelligent Compression**: Smart algorithms detect and condense repetitive patterns
+- **Comment Summarization**: Preserves essential documentation while reducing verbosity
+- **Size Reduction**: Can reduce output size by 30-50% compared to standard minification
+
+### Git Change Detection
+
+The Git Change Detection feature helps LLMs focus on the most relevant parts of your codebase:
+
+- **Contextual Awareness**: Clearly marks which files you're actively working on
+- **Token Efficiency**: When using prioritization, puts changed files first, saving tokens on less relevant code
+- **Focus Guidance**: Visual markers help guide LLM attention to code that matters most
+- **Configurable Depth**: Look back 1-7+ days to match your development cycle
+- **Visual Customization**: Choose from emoji (🔄), text, or markdown highlighting styles
+
+### How It Works
+
+1. Automatically detects if your project uses Git
+2. Identifies recently changed files based on your history depth setting
+3. Marks these files with your preferred highlighting style
+4. Optionally prioritizes changed files at the top of the flattened output
+
+This feature combines perfectly with the Mermaid diagram visualizations, making it easier for AI assistants to understand both your code architecture and your active development focus.
 
 ## Supported Languages
 

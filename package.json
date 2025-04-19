@@ -50,7 +50,39 @@
         "codeFlattener.respectFlattenignore": {
           "type": "boolean",
           "default": true,
-          "description": "Whether to respect .flattenignore files when flattening code"
+          "description": "Respect .flattenignore files to exclude specific files and directories from flattening"
+        },
+        "codeFlattener.highlightGitChanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Highlight recently changed files in git repositories for better LLM context"
+        },
+        "codeFlattener.gitChangeHighlightStyle": {
+          "type": "string",
+          "enum": ["emoji", "text", "markdown"],
+          "default": "emoji",
+          "description": "Style of highlighting for git changes: emoji (🔄), text ([MODIFIED]), or markdown (bold)"
+        },
+        "codeFlattener.gitChangeHistoryDepth": {
+          "type": "number",
+          "default": 1,
+          "description": "Number of days to look back for changes in git history (1 = today only, 7 = last week)"
+        },
+        "codeFlattener.prioritizeGitChanges": {
+          "type": "boolean",
+          "default": true,
+          "description": "Boost the priority of recently changed files in the flattened output"
+        },
+        "codeFlattener.ultraCompactMode": {
+          "type": "boolean",
+          "default": false,
+          "description": "Generate ultra-compact output with aggressive minification for maximum LLM token efficiency"
+        },
+        "codeFlattener.compactModeLevel": {
+          "type": "string",
+          "enum": ["minimal", "moderate", "aggressive"],
+          "default": "moderate",
+          "description": "Level of compression for ultra-compact mode: minimal (comments only), moderate (default), or aggressive (structure-focused)"
         },
         "codeFlattener.outputFolder": {
           "type": "string",

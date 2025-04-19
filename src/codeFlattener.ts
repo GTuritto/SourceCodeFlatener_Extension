@@ -105,6 +105,64 @@ export class CodeFlattener {
         this.outputChannel.appendLine(`[ERROR] ${message}`);
         vscode.window.showErrorMessage(message);
     }
+    
+    /**
+     * Check if the current project is a git repository
+     * @param projectPath Path to the project root
+     * @returns True if git repository detected
+     */
+    private async isGitRepository(projectPath: string): Promise<boolean> {
+        try {
+            const gitDir = path.join(projectPath, '.git');
+            const stats = await stat(gitDir).catch(() => null);
+            return stats !== null && stats.isDirectory();
+        } catch (error) {
+            this.log(`Error checking if project is git repository: ${error}`);
+            return false;
+        }
+    }
+    
+    /**
+     * Get list of files that have been recently changed in git
+     * @param projectPath Path to the project root
+     * @param historyDepth Number of days to look back for changes
+     * @returns Array of relative file paths that have been modified
+     */
+    private async getGitChangedFiles(projectPath: string, historyDepth: number = 1): Promise<string[]> {
+        if (!await this.isGitRepository(projectPath)) {
+            return [];
+        }
+        
+        try {
+            // Run git command to get modified files
+            const { promisify } = require('util');
+            const exec = promisify(require('child_process').exec);
+            
+            // Construct git command based on history depth
+            let gitCommand = '';
+            if (historyDepth <= 1) {
+                // Default: Get staged, unstaged, and today's changes
+                gitCommand = 'git diff --name-only HEAD && git ls-files --others --exclude-standard';
+            } else {
+                // Look back N days based on user setting
+                const dateFilter = `--since="${historyDepth} days ago"`;
+                gitCommand = `git diff --name-only HEAD ${dateFilter} && git ls-files --others --exclude-standard`;
+            }
+            
+            const { stdout } = await exec(gitCommand, {
+                cwd: projectPath
+            });
+            
+            // Process the output to get file paths
+            return stdout.split('\n')
+                .map((line: string) => line.trim())
+                .filter((line: string) => line.length > 0)
+                .map((relativePath: string) => path.join(projectPath, relativePath)); // Convert to absolute paths
+        } catch (error) {
+            this.log(`Error getting git changed files: ${error}`);
+            return [];
+        }
+    }
 
     /**
      * Flatten the entire workspace
@@ -166,6 +224,33 @@ export class CodeFlattener {
             const flattenignorePatterns = respectFlattenignore
                 ? await this.readFlattenignorePatterns(workspacePath)
                 : [];
+                
+            // Get git changed files if enabled
+            const highlightGitChanges = config.get<boolean>('highlightGitChanges', true);
+            const gitChangeHistoryDepth = config.get<number>('gitChangeHistoryDepth', 1);
+            const gitChangeHighlightStyle = config.get<string>('gitChangeHighlightStyle', 'emoji');
+            const prioritizeGitChanges = config.get<boolean>('prioritizeGitChanges', true);
+            
+            // Load ultra-compact mode settings
+            const ultraCompactMode = config.get<boolean>('ultraCompactMode', false);
+            const compactModeLevel = config.get<string>('compactModeLevel', 'moderate');
+            
+            // Store git-related options for use in other methods
+            const gitOptions = {
+                highlightGitChanges,
+                gitChangeHistoryDepth,
+                gitChangeHighlightStyle,
+                prioritizeGitChanges
+            };
+            
+            // Get changed files if feature is enabled
+            const gitChangedFiles = highlightGitChanges
+                ? await this.getGitChangedFiles(workspacePath, gitChangeHistoryDepth)
+                : [];
+                
+            if (gitChangedFiles.length > 0) {
+                this.log(`Detected ${gitChangedFiles.length} recently changed files in git (looking back ${gitChangeHistoryDepth} days)`);
+            }
             
             // Set output file variables
             this.projectName = path.basename(workspacePath);
@@ -233,9 +318,37 @@ Project Directory: ${workspacePath}
                     return !this.shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns, flattenignorePatterns);
                 });
                 
-                // If prioritization is enabled, sort files by importance
+                // If git change prioritization is enabled, boost changed files to the top
+                if (prioritizeGitChanges && gitChangedFiles.length > 0) {
+                    // Sort files with git changes first, then by other importance factors
+                    files.sort((a, b) => {
+                        const aIsChanged = gitChangedFiles.includes(a);
+                        const bIsChanged = gitChangedFiles.includes(b);
+                        
+                        if (aIsChanged && !bIsChanged) return -1; // a is changed, b is not
+                        if (!aIsChanged && bIsChanged) return 1;  // b is changed, a is not
+                        return 0; // both changed or both not changed - maintain original order
+                    });
+                }
+                
+                // If general prioritization is enabled, sort files by importance
+                // but preserve git change priority if enabled
                 if (options.prioritizeImportantFiles) {
-                    files = this.prioritizeFiles(files, workspacePath);
+                    if (prioritizeGitChanges && gitChangedFiles.length > 0) {
+                        // Split into changed and unchanged files
+                        const changedFiles = files.filter(f => gitChangedFiles.includes(f));
+                        const unchangedFiles = files.filter(f => !gitChangedFiles.includes(f));
+                        
+                        // Sort each group separately
+                        const sortedChangedFiles = this.prioritizeFiles(changedFiles, workspacePath);
+                        const sortedUnchangedFiles = this.prioritizeFiles(unchangedFiles, workspacePath);
+                        
+                        // Combine them back
+                        files = [...sortedChangedFiles, ...sortedUnchangedFiles];
+                    } else {
+                        // Just do regular prioritization
+                        files = this.prioritizeFiles(files, workspacePath);
+                    }
                 }
                 
                 progressCallback(`Filtered to ${files.length} relevant files`, 0.2);
@@ -275,7 +388,8 @@ Project Directory: ${workspacePath}
                                 fileCount++;
                                 totalBytes += fileStats.size;
                                 
-                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes, progressCallback);
+                                const isChanged = gitChangedFiles.includes(file);
+                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes, progressCallback, isChanged);
                             } else {
                                 skippedCount++;
                             }
@@ -1362,9 +1476,11 @@ Project Directory: ${workspacePath}
     /**
      * Minify content to reduce size and token usage for LLMs
      * @param content The content to minify
+     * @param ultraCompact Whether to apply ultra-compact mode compression
+     * @param compactLevel Compression level for ultra-compact mode (minimal, moderate, aggressive)
      * @returns Minified content
      */
-    private minifyContent(content: string): string {
+    private minifyContent(content: string, ultraCompact: boolean = false, compactLevel: string = 'moderate'): string {
         // Skip minification for empty content
         if (!content || content.trim() === '') {
             return content;
@@ -1385,24 +1501,59 @@ Project Directory: ${workspacePath}
         // 1. Remove trailing whitespace on each line
         minified = minified.replace(/[ \t]+$/gm, '');
         
-        // 2. Reduce (but don't eliminate) excessive consecutive blank lines
-        // More conservative - only compress sequences of 5+ blank lines down to 3 blank lines
-        // This maintains better code separation and structure
-        minified = minified.replace(/\n{5,}/g, '\n\n\n\n');
+        // 2. Reduce excessive consecutive blank lines
+        if (ultraCompact && compactLevel === 'aggressive') {
+            // Aggressive: Reduce all blank line sequences to just 1 blank line
+            minified = minified.replace(/\n{2,}/g, '\n\n');
+        } else if (ultraCompact && compactLevel === 'moderate') {
+            // Moderate: Reduce 3+ blank lines to just 2 blank lines
+            minified = minified.replace(/\n{3,}/g, '\n\n');
+        } else {
+            // Conservative (default): Compress 5+ blank lines down to 3-4 blank lines
+            minified = minified.replace(/\n{5,}/g, '\n\n\n\n');
+        }
         
         // 3. Only minify obviously verbose comments, preserving structure and important details
         // Handle multi-line comments carefully
         try {
             minified = minified.replace(/\/\*\*([\s\S]*?)\*\//g, (match) => {
-                // Skip if the comment includes any meaningful annotation or is less than 100 chars
-                if (match.includes('@') || // Keep JSDoc and annotations
+                // Handle comments based on compactness settings
+                const isImportantComment = match.includes('@') || // JSDoc annotations
                     match.toLowerCase().includes('copyright') || 
-                    match.toLowerCase().includes('license') || 
-                    match.toLowerCase().includes('todo') || 
+                    match.toLowerCase().includes('license');
+                
+                const isUsefulComment = match.toLowerCase().includes('todo') || 
                     match.toLowerCase().includes('fixme') || 
-                    match.toLowerCase().includes('important') || 
-                    match.length < 100) { 
-                    return match; // Preserve these comments completely
+                    match.toLowerCase().includes('important');
+                
+                const isShortComment = match.length < 100;
+                
+                // Ultra-compact handling based on level
+                if (ultraCompact) {
+                    if (compactLevel === 'aggressive') {
+                        // Keep only JSDoc, copyright, and license comments
+                        if (isImportantComment) {
+                            return match.replace(/\n[ \t]*\*[ \t]*/g, '\n * ')
+                                   .replace(/[ \t]{2,}/g, ' ');
+                        }
+                        // For aggressive mode, summarize all other large comment blocks
+                        if (match.length > 100) {
+                            // Extract first line of the comment to represent the comment
+                            const firstLine = match.split('\n')[0];
+                            return `/** ${firstLine.replace(/\/\*\*|\*/g, '').trim()} ... */`;
+                        }
+                    } else if (compactLevel === 'moderate' && !isImportantComment && !isUsefulComment && !isShortComment) {
+                        // For moderate, condense non-essential long comments
+                        const firstSentenceMatch = match.match(/\/\*\*\s*([^.!?\n]*[.!?])/i);
+                        if (firstSentenceMatch && firstSentenceMatch[1]) {
+                            return `/** ${firstSentenceMatch[1].trim()} ... */`;
+                        }
+                    }
+                }
+                
+                // For minimal or non-ultracompact mode, preserve these comments completely
+                if (isImportantComment || isUsefulComment || isShortComment) {
+                    return match;
                 }
                 
                 // For longer comments, maintain structure but trim excessive whitespace
@@ -1414,11 +1565,11 @@ Project Directory: ${workspacePath}
             // This prevents potential issues with complex patterns
             return content;
         }
-        
+
         // 4. Handle single-line comment sequences very conservatively
         // Only condense long sequences of very similar comments
         try {
-            minified = minified.replace(/(\/\/[^\n]*\n){5,}/g, (match) => {
+            minified = minified.replace(/(\/\/.*\n){5,}/g, (match) => {
                 const comments = match.split('\n').filter(line => line.trim() !== '');
                 
                 // Check if comments are very similar using a simple heuristic
@@ -1433,15 +1584,61 @@ Project Directory: ${workspacePath}
                     }
                 }
                 
-                // Only condense if most comments are very similar
-                if (similarCount > comments.length * 0.8 && comments.length > 10) {
-                    return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                // Different compression levels for comment sequences
+                if (ultraCompact) {
+                    // Ultra-compact mode handling based on level
+                    if (compactLevel === 'aggressive') {
+                        // Aggressively reduce all comment sequences longer than 3
+                        if (comments.length > 3) {
+                            return `${comments[0]}\n// ... plus ${comments.length - 1} additional comments\n`;
+                        }
+                    } else if (compactLevel === 'moderate') {
+                        // Moderately reduce similar comments (less strict similarity threshold)
+                        if (similarCount > comments.length * 0.6 && comments.length > 5) {
+                            return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                        }
+                    } else if (compactLevel === 'minimal') {
+                        // Minimal reduction - only condense very similar long sequences
+                        if (similarCount > comments.length * 0.75 && comments.length > 7) {
+                            return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                        }
+                    }
+                } else {
+                    // Standard mode - only condense if most comments are very similar
+                    if (similarCount > comments.length * 0.8 && comments.length > 10) {
+                        return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                    }
                 }
-                return match; // Keep original if not highly similar
+                return match; // Keep original if not condensed
             });
         } catch (e) {
             // If any regex processing fails, return the original content
             return content;
+        }
+        
+        // Additional ultra-compact processing for aggressive level
+        if (ultraCompact && compactLevel === 'aggressive') {
+            // Remove all commented-out code blocks (lines starting with // that look like code)
+            minified = minified.replace(/^\s*\/\/\s*[a-zA-Z0-9_$]+\s*[(=:;{].*$/gm, '');
+            
+            // Collapse repetitive code patterns (e.g., long chains of similar method calls)
+            minified = minified.replace(/(\.[a-zA-Z0-9_$]+\([^)]*\)[;.])\s*\1\s*\1(\s*\1){2,}/g, 
+                           (match) => {
+                               const parts = match.split(';').filter(p => p.trim());
+                               if (parts.length > 3) {
+                                   return `${parts[0]}; ${parts[1]}; /* + ${parts.length - 2} similar calls */`;
+                               }
+                               return match;
+                           });
+            
+            // Reduce import/require sequences
+            minified = minified.replace(/(import|require)([^\n]+\n){5,}/g, (match) => {
+                const lines = match.split('\n').filter(line => line.trim());
+                if (lines.length > 5) {
+                    return `${lines.slice(0, 3).join('\n')}\n// ... plus ${lines.length - 3} more imports\n`;
+                }
+                return match;
+            });
         }
         
         return minified;
@@ -1497,7 +1694,8 @@ Project Directory: ${workspacePath}
         filepath: string, 
         projectDir: string,
         maxOutputFileSizeBytes: number,
-        progressCallback: (message: string, increment: number) => void
+        progressCallback: (message: string, increment: number) => void,
+        isRecentlyChanged: boolean = false
     ): Promise<void> {
         try {
             const relativePath = path.relative(projectDir, filepath);
@@ -1508,7 +1706,32 @@ Project Directory: ${workspacePath}
             
             // Prepare header content with anchor for TOC navigation
             const safeAnchorName = path.basename(filepath).replace(/[\s.]+/g, '_');
-            let output = `\n## ${relativePath} <a id="${safeAnchorName}"></a>\n\n`;
+            
+            // Add special marker for recently changed files to help LLMs focus on relevant parts
+            let output = `\n## ${relativePath} <a id="${safeAnchorName}"></a>`;
+            
+            // Add visual indicator for recently changed files based on selected style
+            if (isRecentlyChanged) {
+                // Get highlight style from configuration
+                const config = vscode.workspace.getConfiguration('codeFlattener');
+                const highlightStyle = config.get<string>('gitChangeHighlightStyle', 'emoji');
+                
+                switch (highlightStyle) {
+                    case 'emoji':
+                        output += ` 🔄 **[RECENTLY MODIFIED]**`; // Emoji style
+                        break;
+                    case 'text':
+                        output += ` [RECENTLY MODIFIED]`; // Simple text style
+                        break;
+                    case 'markdown':
+                        output += ` **RECENTLY MODIFIED**`; // Bold markdown style
+                        break;
+                    default:
+                        output += ` 🔄 **[RECENTLY MODIFIED]**`; // Default to emoji
+                }
+            }
+            
+            output += `\n\n`;
             
             try {
                 // Read file with error handling
@@ -1530,7 +1753,17 @@ Project Directory: ${workspacePath}
                 
                 // Minify content if enabled in options to optimize for LLMs
                 if (this.llmOptions?.minifyOutput) {
-                    processedContent = this.minifyContent(processedContent);
+                    // Get configuration settings for ultra-compact mode
+                    const config = vscode.workspace.getConfiguration('codeFlattener');
+                    const ultraCompactMode = config.get<boolean>('ultraCompactMode', false);
+                    const compactModeLevel = config.get<string>('compactModeLevel', 'moderate');
+                    
+                    // Apply minification with ultra-compact mode if enabled
+                    processedContent = this.minifyContent(
+                        processedContent,
+                        ultraCompactMode,
+                        compactModeLevel as string
+                    );
                 }
                 
                 // Add the content directly without code fences

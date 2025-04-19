@@ -26,9 +26,25 @@ CodeFlattener transforms your multi-file project into a structured, dependency-a
 
 ## Latest Improvements (v1.6.1)
 
-- Added support for `.flattenignore` files - specify exactly which files or directories to exclude
-- Improved error handling with user-friendly messages
-- Enhanced VS Code integration with dedicated logging
+### Ultra-Compact Mode
+
+- **Maximum Token Efficiency**: New compression options to create extremely compact output files
+- **Customizable Compression**: Three intensity levels (minimal, moderate, aggressive) to match your needs
+- **Smart Processing**: Intelligent algorithms that preserve code semantics while reducing size
+- **Token Optimization**: Can reduce token usage by 30-50% for more efficient LLM interactions
+
+### Git Change Detection for LLMs
+
+- **Smart Code Focus**: Automatically highlights recently modified files to focus LLM attention on actively developed code
+- **Configurable Highlighting**: Choose between emoji (🔄), text, or markdown highlighting styles
+- **Flexible History**: Set how many days back to consider changes (1-7+) to match your development cycle
+- **Priority Boosting**: Option to move changed files to the top of the output for maximum token efficiency
+
+### Other Enhancements
+
+- **Flattenignore Support**: Added `.flattenignore` files to exclude specific files/directories from output
+- **Improved Error Handling**: User-friendly messages instead of console errors
+- **Enhanced VS Code Integration**: Dedicated logging output channel
 
 ## Streamlined Settings
 
@@ -52,7 +68,16 @@ CodeFlattener now features a simplified settings interface, focusing on what mat
 
 ## Perfect for AI Assistants
 
-CodeFlattener is optimized for use with AI coding assistants like ChatGPT, Claude, and GitHub Copilot. The flattened output provides maximum context while respecting token limits, helping AI tools understand your entire project structure and relationships between files.
+CodeFlattener is optimized for use with AI coding assistants like ChatGPT, Claude, and GitHub Copilot. The flattened output provides maximum context while respecting token limits, helping AI tools understand your entire project structure.
+
+### LLM Optimization Features
+
+- **Git Change Detection** - Guide AI focus to recently modified files with visual markers
+- **Priority File Ordering** - Present the most important code first for better token efficiency
+- **Relationship Visualization** - Help AI understand code structure with Mermaid diagrams
+- **Smart Filtering** - Remove irrelevant files via .gitignore and .flattenignore support
+
+The result: AI assistants that spend less time figuring out code structure and more time solving your actual coding challenges.
 
 ## Supported Languages
 

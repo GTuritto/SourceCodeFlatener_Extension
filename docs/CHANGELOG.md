@@ -6,6 +6,32 @@ All notable changes to the "CodeFlattener" extension will be documented in this 
 
 ### Added
 
+#### Ultra-Compact Mode for Maximum Token Efficiency
+
+- New `codeFlattener.ultraCompactMode` setting to enable extreme minification for LLMs (disabled by default)
+- Added `codeFlattener.compactModeLevel` to control compression intensity:
+  - `minimal` - Light compression focusing only on comments
+  - `moderate` - Balanced compression (default)
+  - `aggressive` - Maximum compression for lowest token usage
+- Advanced compression techniques including:
+  - Intelligent comment summarization
+  - Repetitive pattern detection and collapsing
+  - Import statement condensing
+  - Commented code removal (aggressive mode)
+
+#### Git Change Detection for LLM Optimization
+
+- New feature to highlight recently modified files in git repositories
+- Added `codeFlattener.highlightGitChanges` setting to enable/disable the feature (enabled by default)
+- Added `codeFlattener.gitChangeHighlightStyle` setting for customizable highlighting styles:
+  - `emoji` - Uses 🔄 icon with bold text (default)
+  - `text` - Simple text marker [RECENTLY MODIFIED]
+  - `markdown` - Bold styling **RECENTLY MODIFIED**
+- Added `codeFlattener.gitChangeHistoryDepth` setting to control how many days back to look for changes
+- Added `codeFlattener.prioritizeGitChanges` setting to boost recently changed files to the top of output
+
+#### File Filtering Improvements
+
 - Support for `.flattenignore` file to exclude specific files and folders from flattening
 - New setting `codeFlattener.respectFlattenignore` to enable/disable .flattenignore support (enabled by default)
 
