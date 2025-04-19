@@ -1,6 +1,6 @@
 # CodeFlattener
 
-[![Version](https://img.shields.io/badge/version-1.6.0-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
@@ -19,11 +19,18 @@ CodeFlattener transforms your multi-file project into a structured, dependency-a
 - **Plain Text Processing**: All code is treated as plain text for maximum compatibility with LLMs
 - **Enhanced Security**: Automatically excludes sensitive files and information
 - **Gitignore Support**: Respects your project's .gitignore patterns
+- **Flattenignore Support** (v1.6.1): Exclude specific files and directories via .flattenignore
 - **Important Files First**: Prioritizes key files like configuration and entry points
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
 - **Explorer Integration**: Right-click in the file explorer to flatten specific directories
 
-## Streamlined Settings (v1.6.0)
+## Latest Improvements (v1.6.1)
+
+- Added support for `.flattenignore` files - specify exactly which files or directories to exclude
+- Improved error handling with user-friendly messages
+- Enhanced VS Code integration with dedicated logging
+
+## Streamlined Settings
 
 CodeFlattener now features a simplified settings interface, focusing on what matters most:
 
@@ -32,6 +39,7 @@ CodeFlattener now features a simplified settings interface, focusing on what mat
 - **Max Output Size**: Set the maximum size before splitting output files (default: 5MB)
 - **Prioritize Important Files**: List the most critical files first for better context (default: on)
 - **Add Code Relationship Diagrams**: Include Mermaid visualizations of code structure (default: on)
+- **Respect Flattenignore**: Enable or disable .flattenignore file support (default: on)
 
 ## Usage
 

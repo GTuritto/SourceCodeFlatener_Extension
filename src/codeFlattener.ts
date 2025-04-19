@@ -1,3 +1,5 @@
+/// <reference types="node" />
+
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -13,7 +15,8 @@ const globPromise = promisify(glob.glob);
 
 // File size constants (in bytes)
 const KB = 1024;
-const MB = 1024 * KB;
+const MB = KB * 1024;
+const GB = MB * 1024;
 
 /**
  * Interface for storing information about code symbols (functions, classes, etc.)
@@ -88,6 +91,21 @@ export class CodeFlattener {
         '.js', '.ts', '.py', '.java', '.cs', '.go', '.php', '.rb', '.rs'
     ];
 
+    private outputChannel: vscode.OutputChannel;
+
+    constructor() {
+        this.outputChannel = vscode.window.createOutputChannel('Code Flattener');
+    }
+
+    private log(message: string) {
+        this.outputChannel.appendLine(`[INFO] ${message}`);
+    }
+
+    private error(message: string) {
+        this.outputChannel.appendLine(`[ERROR] ${message}`);
+        vscode.window.showErrorMessage(message);
+    }
+
     /**
      * Flatten the entire workspace
      * @param workspacePath Path to the workspace/folder to flatten
@@ -129,14 +147,15 @@ export class CodeFlattener {
             // Store options for use in other methods
             this.llmOptions = options;
             
-            progressCallback(`Starting flattening process...`, 0.01);
+            this.log(`Starting workspace flattening for: ${workspacePath}`);
             
-            // Make sure the output directory exists
+            // Clear previous state the output directory exists
             await this.ensureDirectory(outputFolderPath);
             
             // Read .gitignore patterns if enabled
             let gitignorePatterns: string[] = [];
             if (options.respectGitignore) {
+                this.log(`Loading .gitignore patterns...`);
                 progressCallback(`Loading .gitignore patterns...`, 0.02);
                 gitignorePatterns = await this.readGitignorePatterns(workspacePath);
             }
@@ -221,7 +240,6 @@ Project Directory: ${workspacePath}
                 
                 progressCallback(`Filtered to ${files.length} relevant files`, 0.2);
             } catch (scanErr) {
-                console.error('Error scanning for files:', scanErr);
                 progressCallback(`Error scanning for files: ${(scanErr as Error).message}`, 0.2);
                 // Continue with any files we might have found
             }
@@ -257,16 +275,16 @@ Project Directory: ${workspacePath}
                                 fileCount++;
                                 totalBytes += fileStats.size;
                                 
-                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes);
+                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes, progressCallback);
                             } else {
                                 skippedCount++;
                             }
                         } catch (statErr) {
-                            console.error(`Error getting stats for file ${file}:`, statErr);
+                            progressCallback(`Error getting stats for file ${file}: ${(statErr as Error).message}`, 0);
                             skippedCount++;
                         }
                     } catch (fileErr) {
-                        console.error(`Error processing file ${file}:`, fileErr);
+                        progressCallback(`Error processing file ${file}: ${(fileErr as Error).message}`, 0);
                         skippedCount++;
                     }
                 }));
@@ -377,13 +395,13 @@ Project Directory: ${workspacePath}
                                `\`\`\`mermaid\nclassDiagram\nclass Main\nclass Utils\nMain <|-- Utils\n\`\`\`\n\n` +
                                `\`\`\`mermaid\nflowchart TB\nsubgraph A["Core"]\nB["Main"]\nend\n\`\`\`\n`;
                 diagramsContent += testMarker;
-                console.log('Added special test markers for comprehensive visualization');
+                this.log('Added test markers for comprehensive visualization');
             } else {
                 // Force test marker for basic visualization
                 const testMarker = `\n<!-- TEST VISUALIZATION MARKER -->\n\n` +
                                `\`\`\`mermaid\ngraph LR\nA["Main"] --> B["Utils"]\n\`\`\`\n`;
                 diagramsContent += testMarker;
-                console.log('Added special test marker for basic visualization');
+                this.log('Added special test marker for basic visualization');
             }
 
             // Append diagrams to the output file
@@ -405,7 +423,7 @@ Project Directory: ${workspacePath}
                 
                 progressCallback(`Successfully created flattened code file`, 0.98);
             } catch (readErr) {
-                console.error('Error updating summary in output file:', readErr);
+                progressCallback(`Error updating summary in output file: ${(readErr as Error).message}`, 0.98);
                 // Try to write the summary on its own if we can't read the original file
                 await writeFile(firstOutputFilePath, summary);
             }
@@ -415,7 +433,6 @@ Project Directory: ${workspacePath}
             // No additional artifacts needed as we've generated the comprehensive file
             
         } catch (err) {
-            console.error('Error in flattenWorkspace:', err);
             progressCallback(`Error: ${(err as Error).message}`, 1.0);
             throw err;
         }
@@ -643,7 +660,7 @@ Project Directory: ${workspacePath}
             console.log(`Loaded ${patterns.length} patterns from .gitignore`);
             return patterns;
         } catch (error) {
-            console.error('Error reading .gitignore:', error);
+            console.log('Error reading .gitignore:', error);
             return patterns;
         }
     }
@@ -664,7 +681,7 @@ Project Directory: ${workspacePath}
                     .filter(line => line && !line.startsWith('#'));
             }
         } catch (err) {
-            console.warn(`Error reading .flattenignore: ${err}`);
+            console.log(`Error reading .flattenignore: ${err}`);
         }
         return [];
     }
@@ -859,7 +876,7 @@ Project Directory: ${workspacePath}
                 }
             }
         } catch (err) {
-            console.error(`Error processing directory ${currentDir}:`, err);
+            console.log(`Error processing directory ${currentDir}:`, err);
         }
     }
 
@@ -1479,7 +1496,8 @@ Project Directory: ${workspacePath}
     private async processFileContents(
         filepath: string, 
         projectDir: string,
-        maxOutputFileSizeBytes: number
+        maxOutputFileSizeBytes: number,
+        progressCallback: (message: string, increment: number) => void
     ): Promise<void> {
         try {
             const relativePath = path.relative(projectDir, filepath);
@@ -1529,18 +1547,18 @@ Project Directory: ${workspacePath}
             } catch (readErr) {
                 // Handle specific read errors
                 if ((readErr as NodeJS.ErrnoException).code === 'ENOENT') {
-                    console.error(`File not found: ${filepath}`);
+                    progressCallback(`File not found: ${filepath}`, 0);
                     await this.writeLineToOutput(`[Error: File not found]`, maxOutputFileSizeBytes);
                 } else if ((readErr as NodeJS.ErrnoException).code === 'EACCES') {
-                    console.error(`Permission denied for file: ${filepath}`);
+                    progressCallback(`Permission denied for file: ${filepath}`, 0);
                     await this.writeLineToOutput(`[Error: Permission denied]`, maxOutputFileSizeBytes);
                 } else {
-                    console.error(`Error reading file ${filepath}:`, readErr);
+                    progressCallback(`Error reading file ${filepath}: ${(readErr as Error).message}`, 0);
                     await this.writeLineToOutput(`[Error: Could not read file]`, maxOutputFileSizeBytes);
                 }
             }
         } catch (err) {
-            console.error(`Error processing file contents for ${filepath}:`, err);
+            progressCallback(`Error processing file contents for ${filepath}: ${(err as Error).message}`, 0);
         }
     }
 
@@ -1622,7 +1640,7 @@ Project Directory: ${workspacePath}
                 }
             }
         } catch (err) {
-            console.error(`Error counting directories in ${dirPath}:`, err);
+            console.log(`Error counting directories in ${dirPath}:`, err);
         }
         
         return count;
@@ -1718,7 +1736,7 @@ Estimated tokens: ${approxTokens}${durationStr}
             // Write the entire block at once instead of line by line
             await fs.promises.appendFile(this.currentOutputFile, block);
         } catch (err) {
-            console.error('Error in writeBlockToOutput:', err);
+            console.log('Error in writeBlockToOutput:', err);
         }
     }
     /**

@@ -1,4 +1,5 @@
 "use strict";
+/// <reference types="node" />
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -34,6 +35,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CodeFlattener = void 0;
+const vscode = __importStar(require("vscode"));
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const glob = __importStar(require("glob"));
@@ -46,7 +48,8 @@ const stat = (0, util_1.promisify)(fs.stat);
 const globPromise = (0, util_1.promisify)(glob.glob);
 // File size constants (in bytes)
 const KB = 1024;
-const MB = 1024 * KB;
+const MB = KB * 1024;
+const GB = MB * 1024;
 /**
  * CodeFlattener class that processes code files and generates
  * a single flattened file with code and LLM-optimized metadata
@@ -75,6 +78,14 @@ class CodeFlattener {
         this.supportedExtensions = [
             '.js', '.ts', '.py', '.java', '.cs', '.go', '.php', '.rb', '.rs'
         ];
+        this.outputChannel = vscode.window.createOutputChannel('Code Flattener');
+    }
+    log(message) {
+        this.outputChannel.appendLine(`[INFO] ${message}`);
+    }
+    error(message) {
+        this.outputChannel.appendLine(`[ERROR] ${message}`);
+        vscode.window.showErrorMessage(message);
     }
     /**
      * Flatten the entire workspace
@@ -109,15 +120,22 @@ class CodeFlattener {
             };
             // Store options for use in other methods
             this.llmOptions = options;
-            progressCallback(`Starting flattening process...`, 0.01);
-            // Make sure the output directory exists
+            this.log(`Starting workspace flattening for: ${workspacePath}`);
+            // Clear previous state the output directory exists
             await this.ensureDirectory(outputFolderPath);
             // Read .gitignore patterns if enabled
             let gitignorePatterns = [];
             if (options.respectGitignore) {
+                this.log(`Loading .gitignore patterns...`);
                 progressCallback(`Loading .gitignore patterns...`, 0.02);
                 gitignorePatterns = await this.readGitignorePatterns(workspacePath);
             }
+            // Read .flattenignore patterns
+            const config = vscode.workspace.getConfiguration('codeFlattener');
+            const respectFlattenignore = config.get('respectFlattenignore', true);
+            const flattenignorePatterns = respectFlattenignore
+                ? await this.readFlattenignorePatterns(workspacePath)
+                : [];
             // Set output file variables
             this.projectName = path.basename(workspacePath);
             const outputFilePath = path.join(outputFolderPath, `${this.projectName}_flattened.md`);
@@ -170,7 +188,7 @@ Project Directory: ${workspacePath}
                 // Filter files based on exclude patterns and gitignore
                 files = files.filter(file => {
                     const relativePath = path.relative(workspacePath, file);
-                    return !this.shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns);
+                    return !this.shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns, flattenignorePatterns);
                 });
                 // If prioritization is enabled, sort files by importance
                 if (options.prioritizeImportantFiles) {
@@ -179,7 +197,6 @@ Project Directory: ${workspacePath}
                 progressCallback(`Filtered to ${files.length} relevant files`, 0.2);
             }
             catch (scanErr) {
-                console.error('Error scanning for files:', scanErr);
                 progressCallback(`Error scanning for files: ${scanErr.message}`, 0.2);
                 // Continue with any files we might have found
             }
@@ -208,19 +225,19 @@ Project Directory: ${workspacePath}
                             if (this.isProcessableFile(file)) {
                                 fileCount++;
                                 totalBytes += fileStats.size;
-                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes);
+                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes, progressCallback);
                             }
                             else {
                                 skippedCount++;
                             }
                         }
                         catch (statErr) {
-                            console.error(`Error getting stats for file ${file}:`, statErr);
+                            progressCallback(`Error getting stats for file ${file}: ${statErr.message}`, 0);
                             skippedCount++;
                         }
                     }
                     catch (fileErr) {
-                        console.error(`Error processing file ${file}:`, fileErr);
+                        progressCallback(`Error processing file ${file}: ${fileErr.message}`, 0);
                         skippedCount++;
                     }
                 }));
@@ -312,14 +329,14 @@ Project Directory: ${workspacePath}
                     `\`\`\`mermaid\nclassDiagram\nclass Main\nclass Utils\nMain <|-- Utils\n\`\`\`\n\n` +
                     `\`\`\`mermaid\nflowchart TB\nsubgraph A["Core"]\nB["Main"]\nend\n\`\`\`\n`;
                 diagramsContent += testMarker;
-                console.log('Added special test markers for comprehensive visualization');
+                this.log('Added test markers for comprehensive visualization');
             }
             else {
                 // Force test marker for basic visualization
                 const testMarker = `\n<!-- TEST VISUALIZATION MARKER -->\n\n` +
                     `\`\`\`mermaid\ngraph LR\nA["Main"] --> B["Utils"]\n\`\`\`\n`;
                 diagramsContent += testMarker;
-                console.log('Added special test marker for basic visualization');
+                this.log('Added special test marker for basic visualization');
             }
             // Append diagrams to the output file
             await this.writeBlockToOutput(diagramsContent, maxOutputFileSizeBytes);
@@ -337,7 +354,7 @@ Project Directory: ${workspacePath}
                 progressCallback(`Successfully created flattened code file`, 0.98);
             }
             catch (readErr) {
-                console.error('Error updating summary in output file:', readErr);
+                progressCallback(`Error updating summary in output file: ${readErr.message}`, 0.98);
                 // Try to write the summary on its own if we can't read the original file
                 await writeFile(firstOutputFilePath, summary);
             }
@@ -345,7 +362,6 @@ Project Directory: ${workspacePath}
             // No additional artifacts needed as we've generated the comprehensive file
         }
         catch (err) {
-            console.error('Error in flattenWorkspace:', err);
             progressCallback(`Error: ${err.message}`, 1.0);
             throw err;
         }
@@ -353,7 +369,7 @@ Project Directory: ${workspacePath}
     /**
      * Determines if a file should be ignored based on its path and patterns
      */
-    shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns = []) {
+    shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns = [], flattenignorePatterns = []) {
         // Always normalize the path for consistent matching
         const normalizedPath = relativePath.replace(/\\/g, '/');
         // Helper function to check if path contains any of the patterns
@@ -485,6 +501,15 @@ Project Directory: ${workspacePath}
                 }
             }
         }
+        // Check if path matches any .flattenignore pattern
+        if (flattenignorePatterns.length > 0) {
+            for (const pattern of flattenignorePatterns) {
+                if (this.matchGlobPattern(normalizedPath, pattern)) {
+                    console.log(`Excluding via .flattenignore pattern '${pattern}': ${normalizedPath}`);
+                    return true;
+                }
+            }
+        }
         return false;
     }
     /**
@@ -536,9 +561,30 @@ Project Directory: ${workspacePath}
             return patterns;
         }
         catch (error) {
-            console.error('Error reading .gitignore:', error);
+            console.log('Error reading .gitignore:', error);
             return patterns;
         }
+    }
+    /**
+     * Read and parse .flattenignore file
+     * @param projectPath Path to the project root containing .flattenignore
+     * @returns Array of ignore patterns
+     */
+    async readFlattenignorePatterns(projectPath) {
+        const flattenignorePath = path.join(projectPath, '.flattenignore');
+        try {
+            if (fs.existsSync(flattenignorePath)) {
+                const content = await readFile(flattenignorePath, 'utf-8');
+                return content
+                    .split('\n')
+                    .map(line => line.trim())
+                    .filter(line => line && !line.startsWith('#'));
+            }
+        }
+        catch (err) {
+            console.log(`Error reading .flattenignore: ${err}`);
+        }
+        return [];
     }
     /**
      * Enhanced glob pattern matching with special handling for complex patterns
@@ -697,7 +743,7 @@ Project Directory: ${workspacePath}
             }
         }
         catch (err) {
-            console.error(`Error processing directory ${currentDir}:`, err);
+            console.log(`Error processing directory ${currentDir}:`, err);
         }
     }
     /**
@@ -723,7 +769,6 @@ Project Directory: ${workspacePath}
         // Skip files that will be automatically generated or don't provide value
         const lowValueFiles = [
             'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'composer.lock', 'Gemfile.lock',
-            'Cargo.lock', 'poetry.lock', 'packages.lock.json', 'project.assets.json', 'paket.lock',
             '.eslintrc', '.prettierrc', '.editorconfig', '.babelrc', '.stylelintrc', '.browserslistrc',
             '.ds_store', 'thumbs.db', '.gitkeep',
             'error.log', 'access.log', 'debug.log', 'npm-debug.log', 'yarn-debug.log', 'yarn-error.log'
@@ -1267,7 +1312,7 @@ Project Directory: ${workspacePath}
      * @param projectDir Base project directory path
      * @param maxOutputFileSizeBytes Maximum size for output file before rotation
      */
-    async processFileContents(filepath, projectDir, maxOutputFileSizeBytes) {
+    async processFileContents(filepath, projectDir, maxOutputFileSizeBytes, progressCallback) {
         try {
             const relativePath = path.relative(projectDir, filepath);
             if (!this.isProcessableFile(filepath)) {
@@ -1306,21 +1351,21 @@ Project Directory: ${workspacePath}
             catch (readErr) {
                 // Handle specific read errors
                 if (readErr.code === 'ENOENT') {
-                    console.error(`File not found: ${filepath}`);
+                    progressCallback(`File not found: ${filepath}`, 0);
                     await this.writeLineToOutput(`[Error: File not found]`, maxOutputFileSizeBytes);
                 }
                 else if (readErr.code === 'EACCES') {
-                    console.error(`Permission denied for file: ${filepath}`);
+                    progressCallback(`Permission denied for file: ${filepath}`, 0);
                     await this.writeLineToOutput(`[Error: Permission denied]`, maxOutputFileSizeBytes);
                 }
                 else {
-                    console.error(`Error reading file ${filepath}:`, readErr);
+                    progressCallback(`Error reading file ${filepath}: ${readErr.message}`, 0);
                     await this.writeLineToOutput(`[Error: Could not read file]`, maxOutputFileSizeBytes);
                 }
             }
         }
         catch (err) {
-            console.error(`Error processing file contents for ${filepath}:`, err);
+            progressCallback(`Error processing file contents for ${filepath}: ${err.message}`, 0);
         }
     }
     /**
@@ -1385,7 +1430,7 @@ Project Directory: ${workspacePath}
             }
         }
         catch (err) {
-            console.error(`Error counting directories in ${dirPath}:`, err);
+            console.log(`Error counting directories in ${dirPath}:`, err);
         }
         return count;
     }
@@ -1471,7 +1516,7 @@ Estimated tokens: ${approxTokens}${durationStr}
             await fs.promises.appendFile(this.currentOutputFile, block);
         }
         catch (err) {
-            console.error('Error in writeBlockToOutput:', err);
+            console.log('Error in writeBlockToOutput:', err);
         }
     }
     /**
@@ -1667,8 +1712,9 @@ Estimated tokens: ${approxTokens}${durationStr}
             'vite.config.js', 'vite.config.ts', 'webpack.config.js', 'rollup.config.js',
             'next.config.js', 'nuxt.config.js', 'svelte.config.js',
             'Dockerfile', 'docker-compose.yml', 'docker-compose.yaml',
-            '.env', '.env.local', '.env.development', '.env.production',
-            'Makefile', 'CMakeLists.txt', 'pom.xml', 'build.gradle', 'build.xml'
+            '.env', 'Makefile', 'CMakeLists.txt', 'pom.xml', 'build.gradle',
+            'requirements.txt', 'setup.py', 'pyproject.toml',
+            'go.mod', 'Cargo.toml', 'gemfile', 'composer.json'
         ].includes(fileName) || [
             '.json', '.toml', '.yaml', '.yml', '.ini', '.conf', '.config'
         ].includes(ext)) {

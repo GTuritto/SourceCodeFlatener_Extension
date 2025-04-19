@@ -1,6 +1,6 @@
 # Code Flattener
 
-[![Version](https://img.shields.io/badge/version-1.6.0-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases/code-flattener-1.6.0.vsix)
+[![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases/code-flattener-1.6.1.vsix)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
@@ -17,7 +17,7 @@ Code Flattener is a VS Code extension that transforms multi-file projects into s
 - **Mermaid Diagrams**: Adds visual dependency graphs for clearer understanding
 - **Broad Language Support**: Works with 20+ programming languages and various file formats
 - **Syntax Highlighting**: Properly formatted code blocks for enhanced readability
-- **Customizable**: Configurable output location, file filtering, and size limits
+- **Customizable**: Configurable output location, file filtering via .flattenignore, and size limits
 - **Performance Optimized**: Uses parallel processing for fast execution on large codebases
 
 ## Installation Options

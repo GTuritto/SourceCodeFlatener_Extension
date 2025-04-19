@@ -2,6 +2,19 @@
 
 All notable changes to the "CodeFlattener" extension will be documented in this file.
 
+## [1.6.1] - 2025-04-19
+
+### Added
+
+- Support for `.flattenignore` file to exclude specific files and folders from flattening
+- New setting `codeFlattener.respectFlattenignore` to enable/disable .flattenignore support (enabled by default)
+
+### Fixed
+
+- Improved error handling with user-friendly messages
+- Removed console.error calls for better VS Code integration
+- Enhanced logging with dedicated output channel
+
 ## [1.6.0] - 2025-03-23
 
 ### Added
