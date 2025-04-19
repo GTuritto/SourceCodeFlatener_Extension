@@ -85,7 +85,7 @@ function activate(context) {
             const includePatterns = [];
             // Always use gitignore and simplify the settings
             const respectGitignore = true;
-            const enableSemanticCompression = false;
+            const enableSemanticCompression = config.get('enableSemanticCompression', false);
             const enhancedTableOfContents = true;
             // Use visualization based on the addCodeRelationshipDiagrams setting
             const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';
@@ -155,7 +155,7 @@ function activate(context) {
             const includePatterns = [];
             // Always use gitignore and simplify the settings
             const respectGitignore = true;
-            const enableSemanticCompression = false;
+            const enableSemanticCompression = config.get('enableSemanticCompression', false);
             const enhancedTableOfContents = true;
             // Use visualization based on the addCodeRelationshipDiagrams setting
             const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';

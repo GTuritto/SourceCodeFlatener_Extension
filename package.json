@@ -113,6 +113,11 @@
           "type": "boolean",
           "default": true,
           "description": "Minify output files by removing extra whitespace and comments to optimize for LLMs and reduce token usage"
+        },
+        "codeFlattener.enableSemanticCompression": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable semantic compression to intelligently analyze and condense code while preserving meaning for better LLM context efficiency"
         }
       }
     }
