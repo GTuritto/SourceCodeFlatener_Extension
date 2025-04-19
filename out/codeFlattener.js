@@ -80,12 +80,103 @@ class CodeFlattener {
         ];
         this.outputChannel = vscode.window.createOutputChannel('Code Flattener');
     }
-    log(message) {
-        this.outputChannel.appendLine(`[INFO] ${message}`);
+    /**
+     * Log a message to the output channel with optional severity level
+     * @param message The message to log
+     * @param level Optional log level (INFO, WARN, ERROR, DEBUG)
+     */
+    log(message, level = 'INFO') {
+        this.outputChannel.appendLine(`[${level}] ${message}`);
+    }
+    /**
+     * Sanitizes error messages to prevent potentially sensitive information disclosure
+     * @param message The raw error message
+     * @returns A sanitized version of the error message
+     */
+    sanitizeErrorMessage(message) {
+        if (!message) {
+            return 'Unknown error';
+        }
+        // Remove any absolute file paths and replace with relative indicator
+        message = message.replace(/[a-zA-Z]:\\[^\s]+/g, '<file>');
+        message = message.replace(/\/[\w\d\/.-]+/g, '<file>');
+        // Remove any potential usernames from error messages
+        message = message.replace(/\/home\/[^\/]+/g, '<home>');
+        message = message.replace(/\/Users\/[^\/]+/g, '<user>');
+        // Remove any IP addresses or potential credentials
+        message = message.replace(/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/g, '<ip-address>');
+        message = message.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '<email>');
+        // Limit maximum length of error messages
+        const MAX_ERROR_LENGTH = 200;
+        if (message.length > MAX_ERROR_LENGTH) {
+            message = message.substring(0, MAX_ERROR_LENGTH) + '...';
+        }
+        return message;
     }
     error(message) {
-        this.outputChannel.appendLine(`[ERROR] ${message}`);
-        vscode.window.showErrorMessage(message);
+        const sanitizedMessage = this.sanitizeErrorMessage(message);
+        this.log(sanitizedMessage, 'ERROR');
+        vscode.window.showErrorMessage(sanitizedMessage);
+    }
+    /**
+     * Check if the current project is a git repository
+     * @param projectPath Path to the project root
+     * @returns True if git repository detected
+     */
+    async isGitRepository(projectPath) {
+        try {
+            const gitDir = path.join(projectPath, '.git');
+            const stats = await stat(gitDir).catch(() => null);
+            return stats !== null && stats.isDirectory();
+        }
+        catch (error) {
+            this.log(`Error checking if project is git repository: ${error}`);
+            return false;
+        }
+    }
+    /**
+     * Get list of files that have been recently changed in git
+     * @param projectPath Path to the project root
+     * @param historyDepth Number of days to look back for changes
+     * @returns Array of relative file paths that have been modified
+     */
+    async getGitChangedFiles(projectPath, historyDepth = 1) {
+        if (!await this.isGitRepository(projectPath)) {
+            return [];
+        }
+        try {
+            // Run git command to get modified files
+            const { promisify } = require('util');
+            const exec = promisify(require('child_process').exec);
+            // Construct git command based on history depth
+            let gitCommand = '';
+            if (historyDepth <= 1) {
+                // Default: Get staged, unstaged, and today's changes
+                gitCommand = 'git diff --name-only HEAD && git ls-files --others --exclude-standard';
+            }
+            else {
+                // Look back N days based on user setting - validate input is a safe positive integer
+                const safeHistoryDepth = Math.max(1, Math.min(365, Math.floor(Number(historyDepth))));
+                if (isNaN(safeHistoryDepth)) {
+                    this.error(`Invalid git history depth value: ${historyDepth}`);
+                    return [];
+                }
+                const dateFilter = `--since="${safeHistoryDepth} days ago"`;
+                gitCommand = `git diff --name-only HEAD ${dateFilter} && git ls-files --others --exclude-standard`;
+            }
+            const { stdout } = await exec(gitCommand, {
+                cwd: projectPath
+            });
+            // Process the output to get file paths
+            return stdout.split('\n')
+                .map((line) => line.trim())
+                .filter((line) => line.length > 0)
+                .map((relativePath) => path.join(projectPath, relativePath)); // Convert to absolute paths
+        }
+        catch (error) {
+            this.log(`Error getting git changed files: ${error}`);
+            return [];
+        }
     }
     /**
      * Flatten the entire workspace
@@ -136,6 +227,28 @@ class CodeFlattener {
             const flattenignorePatterns = respectFlattenignore
                 ? await this.readFlattenignorePatterns(workspacePath)
                 : [];
+            // Get git changed files if enabled
+            const highlightGitChanges = config.get('highlightGitChanges', true);
+            const gitChangeHistoryDepth = config.get('gitChangeHistoryDepth', 1);
+            const gitChangeHighlightStyle = config.get('gitChangeHighlightStyle', 'emoji');
+            const prioritizeGitChanges = config.get('prioritizeGitChanges', true);
+            // Load ultra-compact mode settings
+            const ultraCompactMode = config.get('ultraCompactMode', false);
+            const compactModeLevel = config.get('compactModeLevel', 'moderate');
+            // Store git-related options for use in other methods
+            const gitOptions = {
+                highlightGitChanges,
+                gitChangeHistoryDepth,
+                gitChangeHighlightStyle,
+                prioritizeGitChanges
+            };
+            // Get changed files if feature is enabled
+            const gitChangedFiles = highlightGitChanges
+                ? await this.getGitChangedFiles(workspacePath, gitChangeHistoryDepth)
+                : [];
+            if (gitChangedFiles.length > 0) {
+                this.log(`Detected ${gitChangedFiles.length} recently changed files in git (looking back ${gitChangeHistoryDepth} days)`);
+            }
             // Set output file variables
             this.projectName = path.basename(workspacePath);
             const outputFilePath = path.join(outputFolderPath, `${this.projectName}_flattened.md`);
@@ -190,9 +303,36 @@ Project Directory: ${workspacePath}
                     const relativePath = path.relative(workspacePath, file);
                     return !this.shouldIgnore(relativePath, includePatterns, excludePatterns, gitignorePatterns, flattenignorePatterns);
                 });
-                // If prioritization is enabled, sort files by importance
+                // If git change prioritization is enabled, boost changed files to the top
+                if (prioritizeGitChanges && gitChangedFiles.length > 0) {
+                    // Sort files with git changes first, then by other importance factors
+                    files.sort((a, b) => {
+                        const aIsChanged = gitChangedFiles.includes(a);
+                        const bIsChanged = gitChangedFiles.includes(b);
+                        if (aIsChanged && !bIsChanged)
+                            return -1; // a is changed, b is not
+                        if (!aIsChanged && bIsChanged)
+                            return 1; // b is changed, a is not
+                        return 0; // both changed or both not changed - maintain original order
+                    });
+                }
+                // If general prioritization is enabled, sort files by importance
+                // but preserve git change priority if enabled
                 if (options.prioritizeImportantFiles) {
-                    files = this.prioritizeFiles(files, workspacePath);
+                    if (prioritizeGitChanges && gitChangedFiles.length > 0) {
+                        // Split into changed and unchanged files
+                        const changedFiles = files.filter(f => gitChangedFiles.includes(f));
+                        const unchangedFiles = files.filter(f => !gitChangedFiles.includes(f));
+                        // Sort each group separately
+                        const sortedChangedFiles = this.prioritizeFiles(changedFiles, workspacePath);
+                        const sortedUnchangedFiles = this.prioritizeFiles(unchangedFiles, workspacePath);
+                        // Combine them back
+                        files = [...sortedChangedFiles, ...sortedUnchangedFiles];
+                    }
+                    else {
+                        // Just do regular prioritization
+                        files = this.prioritizeFiles(files, workspacePath);
+                    }
                 }
                 progressCallback(`Filtered to ${files.length} relevant files`, 0.2);
             }
@@ -213,9 +353,18 @@ Project Directory: ${workspacePath}
                 // Process batch in parallel but with controlled concurrency
                 await Promise.all(batch.map(async (file) => {
                     try {
-                        const relativePath = path.relative(workspacePath, file);
+                        // Normalize and validate file path to prevent path traversal attacks
+                        const normalizedFile = path.normalize(file);
+                        const normalizedWorkspace = path.normalize(workspacePath);
+                        // Ensure the file is within the workspace directory
+                        if (!normalizedFile.startsWith(normalizedWorkspace)) {
+                            this.error(`Security warning: Attempted to access file outside workspace: ${file}`);
+                            skippedCount++;
+                            return;
+                        }
+                        const relativePath = path.relative(normalizedWorkspace, normalizedFile);
                         try {
-                            const fileStats = await stat(file);
+                            const fileStats = await stat(normalizedFile);
                             // Skip files that are too large
                             if (fileStats.size > maxFileSizeBytes) {
                                 progressCallback(`Skipping large file: ${relativePath} (${(fileStats.size / MB).toFixed(1)} MB)`, 0);
@@ -225,19 +374,22 @@ Project Directory: ${workspacePath}
                             if (this.isProcessableFile(file)) {
                                 fileCount++;
                                 totalBytes += fileStats.size;
-                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes, progressCallback);
+                                const isChanged = gitChangedFiles.includes(file);
+                                await this.processFileContents(file, workspacePath, maxOutputFileSizeBytes, progressCallback, isChanged);
                             }
                             else {
                                 skippedCount++;
                             }
                         }
                         catch (statErr) {
-                            progressCallback(`Error getting stats for file ${file}: ${statErr.message}`, 0);
+                            // Sanitize error messages to prevent information disclosure
+                            progressCallback(`Error getting stats for file: ${this.sanitizeErrorMessage(statErr.message)}`, 0);
                             skippedCount++;
                         }
                     }
                     catch (fileErr) {
-                        progressCallback(`Error processing file ${file}: ${fileErr.message}`, 0);
+                        // Sanitize error messages to prevent information disclosure
+                        progressCallback(`Error processing file: ${this.sanitizeErrorMessage(fileErr.message)}`, 0);
                         skippedCount++;
                     }
                 }));
@@ -1196,9 +1348,11 @@ Project Directory: ${workspacePath}
     /**
      * Minify content to reduce size and token usage for LLMs
      * @param content The content to minify
+     * @param ultraCompact Whether to apply ultra-compact mode compression
+     * @param compactLevel Compression level for ultra-compact mode (minimal, moderate, aggressive)
      * @returns Minified content
      */
-    minifyContent(content) {
+    minifyContent(content, ultraCompact = false, compactLevel = 'moderate') {
         // Skip minification for empty content
         if (!content || content.trim() === '') {
             return content;
@@ -1214,23 +1368,57 @@ Project Directory: ${workspacePath}
         // SAFE MINIFICATION: Only perform minimal operations that won't affect code semantics
         // 1. Remove trailing whitespace on each line
         minified = minified.replace(/[ \t]+$/gm, '');
-        // 2. Reduce (but don't eliminate) excessive consecutive blank lines
-        // More conservative - only compress sequences of 5+ blank lines down to 3 blank lines
-        // This maintains better code separation and structure
-        minified = minified.replace(/\n{5,}/g, '\n\n\n\n');
+        // 2. Reduce excessive consecutive blank lines
+        if (ultraCompact && compactLevel === 'aggressive') {
+            // Aggressive: Reduce all blank line sequences to just 1 blank line
+            minified = minified.replace(/\n{2,}/g, '\n\n');
+        }
+        else if (ultraCompact && compactLevel === 'moderate') {
+            // Moderate: Reduce 3+ blank lines to just 2 blank lines
+            minified = minified.replace(/\n{3,}/g, '\n\n');
+        }
+        else {
+            // Conservative (default): Compress 5+ blank lines down to 3-4 blank lines
+            minified = minified.replace(/\n{5,}/g, '\n\n\n\n');
+        }
         // 3. Only minify obviously verbose comments, preserving structure and important details
         // Handle multi-line comments carefully
         try {
             minified = minified.replace(/\/\*\*([\s\S]*?)\*\//g, (match) => {
-                // Skip if the comment includes any meaningful annotation or is less than 100 chars
-                if (match.includes('@') || // Keep JSDoc and annotations
+                // Handle comments based on compactness settings
+                const isImportantComment = match.includes('@') || // JSDoc annotations
                     match.toLowerCase().includes('copyright') ||
-                    match.toLowerCase().includes('license') ||
-                    match.toLowerCase().includes('todo') ||
+                    match.toLowerCase().includes('license');
+                const isUsefulComment = match.toLowerCase().includes('todo') ||
                     match.toLowerCase().includes('fixme') ||
-                    match.toLowerCase().includes('important') ||
-                    match.length < 100) {
-                    return match; // Preserve these comments completely
+                    match.toLowerCase().includes('important');
+                const isShortComment = match.length < 100;
+                // Ultra-compact handling based on level
+                if (ultraCompact) {
+                    if (compactLevel === 'aggressive') {
+                        // Keep only JSDoc, copyright, and license comments
+                        if (isImportantComment) {
+                            return match.replace(/\n[ \t]*\*[ \t]*/g, '\n * ')
+                                .replace(/[ \t]{2,}/g, ' ');
+                        }
+                        // For aggressive mode, summarize all other large comment blocks
+                        if (match.length > 100) {
+                            // Extract first line of the comment to represent the comment
+                            const firstLine = match.split('\n')[0];
+                            return `/** ${firstLine.replace(/\/\*\*|\*/g, '').trim()} ... */`;
+                        }
+                    }
+                    else if (compactLevel === 'moderate' && !isImportantComment && !isUsefulComment && !isShortComment) {
+                        // For moderate, condense non-essential long comments
+                        const firstSentenceMatch = match.match(/\/\*\*\s*([^.!?\n]*[.!?])/i);
+                        if (firstSentenceMatch && firstSentenceMatch[1]) {
+                            return `/** ${firstSentenceMatch[1].trim()} ... */`;
+                        }
+                    }
+                }
+                // For minimal or non-ultracompact mode, preserve these comments completely
+                if (isImportantComment || isUsefulComment || isShortComment) {
+                    return match;
                 }
                 // For longer comments, maintain structure but trim excessive whitespace
                 return match.replace(/\n[ \t]*\*[ \t]*/g, '\n * ')
@@ -1245,7 +1433,7 @@ Project Directory: ${workspacePath}
         // 4. Handle single-line comment sequences very conservatively
         // Only condense long sequences of very similar comments
         try {
-            minified = minified.replace(/(\/\/[^\n]*\n){5,}/g, (match) => {
+            minified = minified.replace(/(\/\/.*\n){5,}/g, (match) => {
                 const comments = match.split('\n').filter(line => line.trim() !== '');
                 // Check if comments are very similar using a simple heuristic
                 let similarCount = 0;
@@ -1257,16 +1445,103 @@ Project Directory: ${workspacePath}
                         similarCount++;
                     }
                 }
-                // Only condense if most comments are very similar
-                if (similarCount > comments.length * 0.8 && comments.length > 10) {
-                    return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                // Different compression levels for comment sequences
+                if (ultraCompact) {
+                    // Ultra-compact mode handling based on level
+                    if (compactLevel === 'aggressive') {
+                        // Aggressively reduce all comment sequences longer than 3
+                        if (comments.length > 3) {
+                            return `${comments[0]}\n// ... plus ${comments.length - 1} additional comments\n`;
+                        }
+                    }
+                    else if (compactLevel === 'moderate') {
+                        // Moderately reduce similar comments (less strict similarity threshold)
+                        if (similarCount > comments.length * 0.6 && comments.length > 5) {
+                            return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                        }
+                    }
+                    else if (compactLevel === 'minimal') {
+                        // Minimal reduction - only condense very similar long sequences
+                        if (similarCount > comments.length * 0.75 && comments.length > 7) {
+                            return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                        }
+                    }
                 }
-                return match; // Keep original if not highly similar
+                else {
+                    // Standard mode - only condense if most comments are very similar
+                    if (similarCount > comments.length * 0.8 && comments.length > 10) {
+                        return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
+                    }
+                }
+                return match; // Keep original if not condensed
             });
         }
         catch (e) {
             // If any regex processing fails, return the original content
             return content;
+        }
+        // Additional ultra-compact processing for aggressive level
+        if (ultraCompact && compactLevel === 'aggressive') {
+            // Remove all commented-out code blocks (lines starting with // that look like code)
+            // Add timeout protection against ReDoS
+            try {
+                // Limit the complexity and input size to prevent ReDoS
+                if (minified.length > 5 * MB) {
+                    this.log('File too large for aggressive regex processing - applying basic minification only');
+                }
+                else {
+                    // Use non-catastrophic regex pattern with explicit character limit
+                    minified = minified.replace(/^\s*\/\/\s*[a-zA-Z0-9_$]{1,100}\s*[(=:;{][^\n]{0,1000}$/gm, '');
+                }
+            }
+            catch (e) {
+                this.log(`Regex timeout in commented code processing: ${e}`);
+                // Continue with safer processing
+            }
+            // Collapse repetitive code patterns with safety limits
+            try {
+                // Only apply to reasonable-sized code sections
+                if (minified.length < 2 * MB) {
+                    // Use safer pattern with explicit length limits
+                    minified = minified.replace(/(\.[a-zA-Z0-9_$]{1,50}\([^)]{0,500}\)[;.])\s*\1\s*\1(\s*\1){2,10}/g, (match) => {
+                        if (match.length > 10000) {
+                            return match; // Skip overly long matches
+                        }
+                        const parts = match.split(';').filter(p => p.trim());
+                        if (parts.length > 3 && parts.length < 100) { // Safety limit
+                            return `${parts[0]}; ${parts[1]}; /* + ${parts.length - 2} similar calls */`;
+                        }
+                        return match;
+                    });
+                }
+            }
+            catch (e) {
+                this.log(`Regex timeout in pattern collapse: ${e}`);
+                // Continue with safer processing
+            }
+            // Reduce import/require sequences with ReDoS protection
+            try {
+                // Apply a maximum number of iterations to prevent excessive processing
+                let iterations = 0;
+                const maxIterations = 100;
+                const maxPatternLength = 1000;
+                // Use non-backtracking algorithm with explicit length limits
+                minified = minified.replace(/(import|require)([^\n]{1,500}\n){5,20}/g, (match) => {
+                    // Apply iteration limits to prevent infinite loop attacks
+                    if (++iterations > maxIterations || match.length > maxPatternLength) {
+                        return match; // Skip if too complex
+                    }
+                    const lines = match.split('\n').filter(line => line.trim());
+                    if (lines.length > 5 && lines.length < 100) { // Safety upper bound
+                        return `${lines.slice(0, 3).join('\n')}\n// ... plus ${lines.length - 3} more imports\n`;
+                    }
+                    return match;
+                });
+            }
+            catch (e) {
+                this.log(`Regex timeout in import sequence processing: ${e}`);
+                // Continue with safer processing
+            }
         }
         return minified;
     }
@@ -1312,15 +1587,40 @@ Project Directory: ${workspacePath}
      * @param projectDir Base project directory path
      * @param maxOutputFileSizeBytes Maximum size for output file before rotation
      */
-    async processFileContents(filepath, projectDir, maxOutputFileSizeBytes, progressCallback) {
+    async processFileContents(filepath, projectDir, maxOutputFileSizeBytes, progressCallback, isRecentlyChanged = false) {
         try {
             const relativePath = path.relative(projectDir, filepath);
             if (!this.isProcessableFile(filepath)) {
                 return;
             }
             // Prepare header content with anchor for TOC navigation
-            const safeAnchorName = path.basename(filepath).replace(/[\s.]+/g, '_');
-            let output = `\n## ${relativePath} <a id="${safeAnchorName}"></a>\n\n`;
+            // Ensure anchor name is safe and can't be used for XSS
+            const rawName = path.basename(filepath);
+            const safeAnchorName = rawName.replace(/[^a-zA-Z0-9_-]/g, '_')
+                .replace(/^[^a-zA-Z]+/, '')
+                .substring(0, 50); // Limit length for safety
+            // Add special marker for recently changed files to help LLMs focus on relevant parts
+            let output = `\n## ${relativePath} <a id="${safeAnchorName}"></a>`;
+            // Add visual indicator for recently changed files based on selected style
+            if (isRecentlyChanged) {
+                // Get highlight style from configuration
+                const config = vscode.workspace.getConfiguration('codeFlattener');
+                const highlightStyle = config.get('gitChangeHighlightStyle', 'emoji');
+                switch (highlightStyle) {
+                    case 'emoji':
+                        output += ` 🔄 **[RECENTLY MODIFIED]**`; // Emoji style
+                        break;
+                    case 'text':
+                        output += ` [RECENTLY MODIFIED]`; // Simple text style
+                        break;
+                    case 'markdown':
+                        output += ` **RECENTLY MODIFIED**`; // Bold markdown style
+                        break;
+                    default:
+                        output += ` 🔄 **[RECENTLY MODIFIED]**`; // Default to emoji
+                }
+            }
+            output += `\n\n`;
             try {
                 // Read file with error handling
                 const content = await readFile(filepath, 'utf8');
@@ -1337,7 +1637,12 @@ Project Directory: ${workspacePath}
                 processedContent = processedContent.replace(sensitivePattern, '$1$2 "[REDACTED]"');
                 // Minify content if enabled in options to optimize for LLMs
                 if (this.llmOptions?.minifyOutput) {
-                    processedContent = this.minifyContent(processedContent);
+                    // Get configuration settings for ultra-compact mode
+                    const config = vscode.workspace.getConfiguration('codeFlattener');
+                    const ultraCompactMode = config.get('ultraCompactMode', false);
+                    const compactModeLevel = config.get('compactModeLevel', 'moderate');
+                    // Apply minification with ultra-compact mode if enabled
+                    processedContent = this.minifyContent(processedContent, ultraCompactMode, compactModeLevel);
                 }
                 // Add the content directly without code fences
                 output += processedContent;
