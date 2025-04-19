@@ -29,9 +29,19 @@ done
 echo "Removing source maps..."
 rm -f out/*.map
 
+# Swap README files for marketplace-optimized content
+echo "Swapping README files for marketplace presentation..."
+mv README.md Temp_README.md
+cp assets/MARKETPLACE.md README.md
+
 # Package the extension with the minified files first
 echo "Packaging extension as VSIX..."
 npx vsce package
+
+# Restore original README
+echo "Restoring original README..."
+rm README.md
+mv Temp_README.md README.md
 
 # Create a temporary directory for unpacking and optimizing
 echo "Creating optimized build directory..."
