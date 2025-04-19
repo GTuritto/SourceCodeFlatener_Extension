@@ -3,7 +3,7 @@ const fs = require('fs');
 const { promisify } = require('util');
 
 // Import our compiled CodeFlattener class
-const { CodeFlattener } = require('./out/codeFlattener');
+const { CodeFlattener } = require('../out/codeFlattener');
 
 // Promisify fs functions
 const rmdir = promisify(fs.rm);

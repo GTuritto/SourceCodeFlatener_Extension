@@ -1671,6 +1671,15 @@ Project Directory: ${workspacePath}
                     if (compactLevel === 'aggressive') {
                         // Aggressively reduce all comment sequences longer than 3
                         if (comments.length > 3) {
+                            // Check if any comments contain TODO or FIXME
+                            const todoComments = comments.filter(c => 
+                                USEFUL_KEYWORDS.some(keyword => c.toLowerCase().includes(keyword)));
+                            
+                            // If there are TODO/FIXME comments, preserve them separately
+                            if (todoComments.length > 0) {
+                                return `${comments[0]}\n${todoComments.join('\n')}\n// ... plus ${comments.length - todoComments.length - 1} additional comments\n`;
+                            }
+                            
                             // Use aggressive similarity threshold
                             return `${comments[0]}\n// ... plus ${comments.length - 1} additional comments\n`;
                         }
@@ -1719,8 +1728,17 @@ Project Directory: ${workspacePath}
                 if (minified.length > MAX_AGGRESSIVE_REGEX_SIZE) {
                     this.log('File too large for aggressive regex processing - applying basic minification only');
                 } else {
+                    // Skip TODO/FIXME/important comments first
+                    const todoPattern = new RegExp(`^\\s*\/\/.*\\b(${USEFUL_KEYWORDS.join('|')})\\b`, 'i');
+                    
                     // Use non-catastrophic regex pattern with explicit character limit
-                    minified = minified.replace(/^\s*\/\/\s*[a-zA-Z0-9_$]{1,100}\s*[(=:;{][^\n]{0,1000}$/gm, '');
+                    minified = minified.replace(/^\s*\/\/\s*[a-zA-Z0-9_$]{1,100}\s*[(=:;{][^\n]{0,1000}$/gm, (match) => {
+                        // Don't remove if it's a TODO/FIXME comment
+                        if (todoPattern.test(match)) {
+                            return match;
+                        }
+                        return '';
+                    });
                 }
             } catch (e) {
                 this.log(`Regex timeout in commented code processing: ${e}`);
@@ -1822,10 +1840,12 @@ Project Directory: ${workspacePath}
     }
 
     /**
-     * Process the contents of a file
-     * @param filepath Path to the file to process
-     * @param projectDir Base project directory path
-     * @param maxOutputFileSizeBytes Maximum size for output file before rotation
+     * Process file contents for flattening
+     * @param filepath Path to the file
+     * @param projectDir Project directory path
+     * @param maxOutputFileSizeBytes Maximum output file size in bytes
+     * @param progressCallback Callback to report progress
+     * @param isRecentlyChanged Whether this file was recently changed in git
      */
     private async processFileContents(
         filepath: string, 
