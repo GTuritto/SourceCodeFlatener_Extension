@@ -59,7 +59,7 @@ export function activate(context: vscode.ExtensionContext) {
             
             // Always use gitignore and simplify the settings
             const respectGitignore = true;
-            const enableSemanticCompression = false;
+            const enableSemanticCompression = config.get<boolean>('enableSemanticCompression', false);
             const enhancedTableOfContents = true;
             // Use visualization based on the addCodeRelationshipDiagrams setting
             const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';
@@ -148,7 +148,7 @@ export function activate(context: vscode.ExtensionContext) {
             
             // Always use gitignore and simplify the settings
             const respectGitignore = true;
-            const enableSemanticCompression = false;
+            const enableSemanticCompression = config.get<boolean>('enableSemanticCompression', false);
             const enhancedTableOfContents = true;
             // Use visualization based on the addCodeRelationshipDiagrams setting
             const visualizationLevel = addCodeRelationshipDiagrams ? 'medium' : 'none';

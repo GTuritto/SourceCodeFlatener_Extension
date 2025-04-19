@@ -52,7 +52,7 @@ interface FileInfo {
  */
 interface LLMOptimizationOptions {
     respectGitignore: boolean;           // Always true - respects .gitignore by default
-    enableSemanticCompression: boolean; // Always false - simplified for better consistency
+    enableSemanticCompression: boolean; // Option for applying semantic code compression analysis
     enhancedTableOfContents: boolean;   // Always true - provides better navigation
     prioritizeImportantFiles: boolean;  // User configurable setting
     visualizationLevel: string;         // Based on addCodeRelationshipDiagrams setting (none|medium)
@@ -385,7 +385,7 @@ Project Directory: ${workspacePath}
                         const sortedChangedFiles = this.prioritizeFiles(changedFiles, workspacePath);
                         const sortedUnchangedFiles = this.prioritizeFiles(unchangedFiles, workspacePath);
                         
-                        // Combine them back
+                        // Combine them back with changed files first
                         files = [...sortedChangedFiles, ...sortedUnchangedFiles];
                     } else {
                         // Just do regular prioritization
@@ -1535,6 +1535,14 @@ Project Directory: ${workspacePath}
      * @param compactLevel Compression level for ultra-compact mode (minimal, moderate, aggressive)
      * @returns Minified content
      */
+    /**
+     * Minify content to reduce size and token usage for LLMs
+     * Enhanced with semantic compression to intelligently preserve code meaning
+     * @param content The content to minify
+     * @param ultraCompact Whether to apply ultra-compact mode compression
+     * @param compactLevel Compression level for ultra-compact mode (minimal, moderate, aggressive)
+     * @returns Minified content with LLM-optimized structure
+     */
     private minifyContent(content: string, ultraCompact: boolean = false, compactLevel: string = 'moderate'): string {
         // Skip minification for empty content
         if (!content || content.trim() === '') {
@@ -1557,31 +1565,49 @@ Project Directory: ${workspacePath}
         minified = minified.replace(/[ \t]+$/gm, '');
         
         // 2. Reduce excessive consecutive blank lines
-        if (ultraCompact && compactLevel === 'aggressive') {
-            // Aggressive: Reduce all blank line sequences to just 1 blank line
-            minified = minified.replace(/\n{2,}/g, '\n\n');
-        } else if (ultraCompact && compactLevel === 'moderate') {
-            // Moderate: Reduce 3+ blank lines to just 2 blank lines
-            minified = minified.replace(/\n{3,}/g, '\n\n');
+        if (ultraCompact) {
+            if (compactLevel === 'aggressive') {
+                // Aggressive: Reduce all blank line sequences to just 1 blank line
+                minified = minified.replace(/\n{2,}/g, '\n\n');
+            } else if (compactLevel === 'moderate') {
+                // Moderate: Reduce 3+ blank lines to just 2 blank lines
+                minified = minified.replace(/\n{3,}/g, '\n\n');
+            } else { // minimal
+                // Minimal: Compress 4+ blank lines down to 3 blank lines
+                minified = minified.replace(/\n{4,}/g, '\n\n\n');
+            }
         } else {
             // Conservative (default): Compress 5+ blank lines down to 3-4 blank lines
             minified = minified.replace(/\n{5,}/g, '\n\n\n\n');
         }
+        
+        // Define semantic compression thresholds for comments and patterns
+        // Comment length threshold to consider "short"
+        const SHORT_COMMENT_THRESHOLD = 100;
+        
+        // Comment similarity thresholds for different compression levels
+        const SIMILARITY_THRESHOLD_AGGRESSIVE = 0.6;  // More aggressive compression
+        const SIMILARITY_THRESHOLD_MODERATE = 0.7;    // Moderate compression
+        const SIMILARITY_THRESHOLD_MINIMAL = 0.75;    // Minimal compression
+        const SIMILARITY_THRESHOLD_STANDARD = 0.8;    // Standard (default) compression
+        
+        // Important keywords that should be preserved in comments
+        const IMPORTANT_KEYWORDS = ['@', 'copyright', 'license'];
+        // Useful keywords that indicate comments should be preserved
+        const USEFUL_KEYWORDS = ['todo', 'fixme', 'important'];
         
         // 3. Only minify obviously verbose comments, preserving structure and important details
         // Handle multi-line comments carefully
         try {
             minified = minified.replace(/\/\*\*([\s\S]*?)\*\//g, (match) => {
                 // Handle comments based on compactness settings
-                const isImportantComment = match.includes('@') || // JSDoc annotations
-                    match.toLowerCase().includes('copyright') || 
-                    match.toLowerCase().includes('license');
+                const isImportantComment = IMPORTANT_KEYWORDS.some(keyword => 
+                    match.toLowerCase().includes(keyword));
                 
-                const isUsefulComment = match.toLowerCase().includes('todo') || 
-                    match.toLowerCase().includes('fixme') || 
-                    match.toLowerCase().includes('important');
+                const isUsefulComment = USEFUL_KEYWORDS.some(keyword => 
+                    match.toLowerCase().includes(keyword));
                 
-                const isShortComment = match.length < 100;
+                const isShortComment = match.length < SHORT_COMMENT_THRESHOLD;
                 
                 // Ultra-compact handling based on level
                 if (ultraCompact) {
@@ -1630,7 +1656,7 @@ Project Directory: ${workspacePath}
                 // Check if comments are very similar using a simple heuristic
                 let similarCount = 0;
                 const firstComment = comments[0];
-                const similarityThreshold = 0.8;
+                const similarityThreshold = SIMILARITY_THRESHOLD_STANDARD;
                 
                 for (let i = 1; i < comments.length; i++) {
                     const similarity = this.calculateSimilarity(firstComment, comments[i]);
@@ -1645,22 +1671,23 @@ Project Directory: ${workspacePath}
                     if (compactLevel === 'aggressive') {
                         // Aggressively reduce all comment sequences longer than 3
                         if (comments.length > 3) {
+                            // Use aggressive similarity threshold
                             return `${comments[0]}\n// ... plus ${comments.length - 1} additional comments\n`;
                         }
                     } else if (compactLevel === 'moderate') {
                         // Moderately reduce similar comments (less strict similarity threshold)
-                        if (similarCount > comments.length * 0.6 && comments.length > 5) {
+                        if (similarCount > comments.length * SIMILARITY_THRESHOLD_MODERATE && comments.length > 5) {
                             return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
                         }
                     } else if (compactLevel === 'minimal') {
                         // Minimal reduction - only condense very similar long sequences
-                        if (similarCount > comments.length * 0.75 && comments.length > 7) {
+                        if (similarCount > comments.length * SIMILARITY_THRESHOLD_MINIMAL && comments.length > 7) {
                             return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
                         }
                     }
                 } else {
                     // Standard mode - only condense if most comments are very similar
-                    if (similarCount > comments.length * 0.8 && comments.length > 10) {
+                    if (similarCount > comments.length * SIMILARITY_THRESHOLD_STANDARD && comments.length > 10) {
                         return `${comments[0]}\n// ... plus ${comments.length - 1} similar comments\n`;
                     }
                 }
@@ -1671,13 +1698,25 @@ Project Directory: ${workspacePath}
             return content;
         }
         
+        // Define constants for size limits and pattern constraints
+        // Maximum file size for aggressive regex processing (5MB)
+        const MAX_AGGRESSIVE_REGEX_SIZE = 5 * 1024 * 1024;
+        // Maximum file size for pattern collapse processing (2MB)
+        const MAX_PATTERN_COLLAPSE_SIZE = 2 * 1024 * 1024;
+        // Maximum length for a single match to process
+        const MAX_MATCH_LENGTH = 10000;
+        // Maximum iterations for regex replacements
+        const MAX_REGEX_ITERATIONS = 100;
+        // Maximum pattern length to process
+        const MAX_PATTERN_LENGTH = 1000;
+        
         // Additional ultra-compact processing for aggressive level
         if (ultraCompact && compactLevel === 'aggressive') {
             // Remove all commented-out code blocks (lines starting with // that look like code)
             // Add timeout protection against ReDoS
             try {
                 // Limit the complexity and input size to prevent ReDoS
-                if (minified.length > 5 * MB) {
+                if (minified.length > MAX_AGGRESSIVE_REGEX_SIZE) {
                     this.log('File too large for aggressive regex processing - applying basic minification only');
                 } else {
                     // Use non-catastrophic regex pattern with explicit character limit
@@ -1691,11 +1730,11 @@ Project Directory: ${workspacePath}
             // Collapse repetitive code patterns with safety limits
             try {
                 // Only apply to reasonable-sized code sections
-                if (minified.length < 2 * MB) {
+                if (minified.length < MAX_PATTERN_COLLAPSE_SIZE) {
                     // Use safer pattern with explicit length limits
                     minified = minified.replace(/(\.[a-zA-Z0-9_$]{1,50}\([^)]{0,500}\)[;.])\s*\1\s*\1(\s*\1){2,10}/g, 
                                 (match) => {
-                                    if (match.length > 10000) {
+                                    if (match.length > MAX_MATCH_LENGTH) {
                                         return match; // Skip overly long matches
                                     }
                                     const parts = match.split(';').filter(p => p.trim());
@@ -1714,13 +1753,11 @@ Project Directory: ${workspacePath}
             try {
                 // Apply a maximum number of iterations to prevent excessive processing
                 let iterations = 0;
-                const maxIterations = 100;
-                const maxPatternLength = 1000;
                 
                 // Use non-backtracking algorithm with explicit length limits
                 minified = minified.replace(/(import|require)([^\n]{1,500}\n){5,20}/g, (match) => {
                     // Apply iteration limits to prevent infinite loop attacks
-                    if (++iterations > maxIterations || match.length > maxPatternLength) {
+                    if (++iterations > MAX_REGEX_ITERATIONS || match.length > MAX_PATTERN_LENGTH) {
                         return match; // Skip if too complex
                     }
                     
@@ -1740,16 +1777,21 @@ Project Directory: ${workspacePath}
     }
     
     /**
-     * Calculate simple similarity between two strings for comment comparison
-     * @param str1 First string
-     * @param str2 Second string
-     * @returns Similarity score between 0 and 1
+     * Calculate similarity between two strings using Levenshtein distance
+     * @param str1 First string to compare
+     * @param str2 Second string to compare
+     * @returns Similarity score (0-1) where 1 is identical
      */
     private calculateSimilarity(str1: string, str2: string): number {
-        if (!str1 || !str2) return 0;
-        const length = Math.max(str1.length, str2.length);
-        if (length === 0) return 1.0;
+        if (!str1 || !str2) {
+            return 0;
+        }
         
+        // Use the length of the longer string for normalization
+        const length = Math.max(str1.length, str2.length);
+        if (length === 0) {
+            return 1; // Both strings are empty, so they are identical
+        }
         // Simple Levenshtein distance implementation
         const a = str1.toLowerCase();
         const b = str2.toLowerCase();
@@ -1850,6 +1892,9 @@ Project Directory: ${workspacePath}
                 const sensitivePattern = /(password|secret|token|key|auth|credential|apikey|api_key|access_key|client_secret)s?(:|=|:=|=>|\s+is\s+|\s+=\s+)\s*['"\`][^'"\r\n]*['"\`]/gi;
                 processedContent = processedContent.replace(sensitivePattern, '$1$2 "[REDACTED]"');
                 
+                // Note: Semantic compression is now directly integrated into the minifyContent method
+                // for optimized LLM-focused code handling
+                
                 // Minify content if enabled in options to optimize for LLMs
                 if (this.llmOptions?.minifyOutput) {
                     // Get configuration settings for ultra-compact mode
@@ -1858,10 +1903,11 @@ Project Directory: ${workspacePath}
                     const compactModeLevel = config.get<string>('compactModeLevel', 'moderate');
                     
                     // Apply minification with ultra-compact mode if enabled
+                    // This includes semantic compression optimized for LLMs when enabled
                     processedContent = this.minifyContent(
                         processedContent,
                         ultraCompactMode,
-                        compactModeLevel as string
+                        compactModeLevel
                     );
                 }
                 

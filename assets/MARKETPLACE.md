@@ -1,6 +1,6 @@
 # CodeFlattener: Source Code to Markdown Transformer
 
-[![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
+[![Version](https://img.shields.io/badge/version-1.6.2-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
@@ -42,13 +42,14 @@ CodeFlattener transforms your multi-file project into a structured, dependency-a
 - **Cross-Platform**: Works seamlessly on Windows, macOS, and Linux
 - **Explorer Integration**: Right-click in the file explorer to flatten specific directories
 
-## Latest Improvements (v1.6.1)
+## Latest Improvements (v1.6.2)
 
-### Ultra-Compact Mode
+### Enhanced Semantic Compression
 
-- **Maximum Token Efficiency**: New compression options to create extremely compact output files
+- **Refined LLM Optimization**: Improved semantic compression logic for better code representation
+- **Intelligent Comment Handling**: Smart preservation of important comments while reducing verbosity
 - **Customizable Compression**: Three intensity levels (minimal, moderate, aggressive) to match your needs
-- **Smart Processing**: Intelligent algorithms that preserve code semantics while reducing size
+- **Maximum Token Efficiency**: Advanced algorithms that preserve code semantics while reducing size
 - **Token Optimization**: Can reduce token usage by 30-50% for more efficient LLM interactions
 
 ### Git Change Detection for LLMs

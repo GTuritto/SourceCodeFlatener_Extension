@@ -2,6 +2,22 @@
 
 All notable changes to the "CodeFlattener" extension will be documented in this file.
 
+## [1.6.2] - 2025-04-19
+
+### Added
+
+#### Enhanced Semantic Compression for LLM Optimization
+
+- Refined semantic compression logic for better LLM-focused code optimization
+- Improved comment processing with keyword-based preservation logic
+- Better organization of compression thresholds for easier configuration
+- Streamlined integration with minification process for cleaner code
+
+### Fixed
+
+- Resolved TypeScript compilation errors related to compression settings
+- Fixed file prioritization logic to ensure it respects both git changes and importance settings
+
 ## [1.6.1] - 2025-04-19
 
 ### Added

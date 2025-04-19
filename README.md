@@ -1,6 +1,6 @@
 # Code Flattener
 
-[![Version](https://img.shields.io/badge/version-1.6.1-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases/code-flattener-1.6.1.vsix)
+[![Version](https://img.shields.io/badge/version-1.6.2-green.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/releases/code-flattener-1.6.2.vsix)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/GTuritto/SourceCodeFlatener_Extension/blob/main/LICENSE)
 [![VS Code Marketplace](https://img.shields.io/badge/VS%20Code-Marketplace-red.svg)](https://marketplace.visualstudio.com/items?itemName=GiuseppeTuritto.code-flattener)
 
