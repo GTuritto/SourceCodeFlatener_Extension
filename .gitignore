@@ -18,6 +18,10 @@ lib/
 # Testing
 .vscode-test/
 coverage/
+tests/temp_test_file.js
+tests/test_semantic_compression.js
+# Ignore any temporary test files
+tests/*_test_*.js
 
 # System files
 .DS_Store
